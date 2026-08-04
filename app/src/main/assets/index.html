@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover">
+<title>PixiMax AI Ultra 4K</title>
+
+<!-- Start.io Web SDK -->
+<script src="https://cdn.startappservice.com/js/startapp-theme-core.sdk.js"></script>
+<script>
+  window.startapp = window.startapp || [];
+  window.startapp.push({ appId: '207695262' });
+</script>
+
+<style>
+:root {
+  --bg-color: #0b0f19;
+  --card-bg: #151c2c;
+  --border-color: #232e48;
+  --accent-blue: #0088ff;
+  --accent-purple: #8a2be2;
+  --text-main: #f0f4f8;
+  --text-sub: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  padding: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+  overflow-y: auto;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.badge {
+  background: linear-gradient(135deg, #ff9900, #ff5500);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+
+.app-title { font-size: 16px; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 6px; }
+.dev-title { font-size: 11px; color: var(--text-sub); }
+
+.nav-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tab-btn {
+  flex: 1; padding: 10px 4px; background: var(--card-bg);
+  border: 1px solid var(--border-color); color: var(--text-sub);
+  border-radius: 10px; font-size: 11px; font-weight: bold;
+  cursor: pointer; text-align: center;
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(0, 136, 255, 0.25), rgba(138, 43, 226, 0.25));
+  border-color: var(--accent-blue); color: #fff;
+}
+
+.section-card {
+  background: var(--card-bg); border: 1px solid var(--border-color);
+  border-radius: 14px; padding: 14px; margin-bottom: 14px;
+}
+
+.upload-box {
+  border: 2px dashed var(--accent-blue);
+  background: rgba(0, 136, 255, 0.05);
+  border-radius: 12px; padding: 16px 10px;
+  text-align: center; cursor: pointer; margin-bottom: 12px;
+}
+.upload-box p { font-size: 13px; color: var(--accent-blue); font-weight: bold; }
+
+.preview-container {
+  position: relative; width: 100%; background: #000;
+  border-radius: 10px; overflow: hidden; display: flex;
+  justify-content: center; align-items: center;
+  min-height: 220px; max-height: 400px;
+  border: 1px solid var(--border-color); margin-bottom: 10px;
+  touch-action: none;
+}
+
+canvas { max-width: 100%; max-height: 380px; object-fit: contain; display: block; }
+.res-badge { font-size: 11px; color: var(--text-sub); text-align: center; margin-bottom: 12px; direction: ltr; }
+
+.ratio-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+.ratio-btn {
+  background: #0f1624; border: 1px solid var(--border-color);
+  color: var(--text-sub); padding: 8px 0; border-radius: 8px;
+  font-size: 11px; font-weight: bold; cursor: pointer; text-align: center;
+}
+.ratio-btn.active { border-color: var(--accent-blue); background: var(--accent-blue); color: #fff; }
+
+.slider-group { margin-bottom: 10px; }
+.slider-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-sub); margin-bottom: 4px; }
+input[type="range"] { width: 100%; accent-color: var(--accent-blue); height: 24px; }
+
+.btn-main {
+  width: 100%; min-height: 44px; padding: 10px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  color: #fff; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 6px;
+}
+
+#maskOverlay {
+  position: absolute; border: 2px dashed #00ffcc;
+  background: rgba(0, 255, 204, 0.2); cursor: move; display: none;
+  box-sizing: border-box; touch-action: none; z-index: 10;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+#toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #1e293b; color: #00ffcc; border: 1px solid #00ffcc;
+  padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: bold;
+  transition: transform 0.3s; opacity: 0; z-index: 999; pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div>
+    <div class="app-title">PixiMax AI <span class="badge">ULTRA 4K</span></div>
+    <div class="dev-title">NovaCore Software</div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="switchTab('enhanceTab', this)">✨ رفع الجودة والأنيميشن</button>
+  <button class="tab-btn" onclick="switchTab('removeBgTab', this)">✂️ إزالة الخلفية</button>
+  <button class="tab-btn" onclick="switchTab('watermarkTab', this)">🧼 مسح العلامة المائية</button>
+</div>
+
+<!-- TAB 1: ENHANCE -->
+<div id="enhanceTab" class="tab-content active">
+  <div class="section-card">
+    <div class="upload-box" onclick="document.getElementById('inputEnhance').click()">
+      <p>📁 اضغط هنا لاختيار صورة لرفع الجودة</p>
+      <input type="file" id="inputEnhance" accept="image/*" style="display:none;" onchange="loadEnhanceImage(event)">
+    </div>
+    <div class="preview-container"><canvas id="canvasEnhance"></canvas></div>
+    <div class="res-badge" id="resEnhance">أبعاد الصورة: -</div>
+
+    <div class="ratio-grid">
+      <button class="ratio-btn active" onclick="setEnhanceRatio('original', this)">أصلي</button>
+      <button class="ratio-btn" onclick="setEnhanceRatio('1:1', this)">1:1 مربع</button>
+      <button class="ratio-btn" onclick="setEnhanceRatio('9:16', this)">9:16 طولي</button>
+      <button class="ratio-btn" onclick="setEnhanceRatio('16:9', this)">16:9 عرضي</button>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label"><span>الحدة (Sharpness)</span><span id="valSharp">140%</span></div>
+      <input type="range" id="sliderSharp" min="100" max="200" value="140" oninput="applyEnhanceFilters()">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>التباين (Contrast)</span><span id="valContrast">120%</span></div>
+      <input type="range" id="sliderContrast" min="100" max="180" value="120" oninput="applyEnhanceFilters()">
+    </div>
+
+    <button class="btn-main" onclick="exportEnhanceImage()">💾 تصدير وحفظ الملف (4K HD)</button>
+  </div>
+</div>
+
+<!-- TAB 2: BG REMOVAL -->
+<div id="removeBgTab" class="tab-content">
+  <div class="section-card">
+    <div class="upload-box" onclick="document.getElementById('inputBg').click()">
+      <p>✂️ اضغط هنا لاختيار صورة لتفريغ الخلفية (PNG)</p>
+      <input type="file" id="inputBg" accept="image/*" style="display:none;" onchange="loadBgImage(event)">
+    </div>
+    <div class="preview-container" style="background: repeating-conic-gradient(#1a2333 0% 25%, #0f172a 0% 50%) 50% / 16px 16px;">
+      <canvas id="canvasBg"></canvas>
+    </div>
+    <div class="res-badge" id="resBg">أبعاد الصورة: -</div>
+    <div class="slider-group">
+      <div class="slider-label"><span>حساسية التفريغ (Tolerance)</span><span id="valTol">25</span></div>
+      <input type="range" id="sliderTol" min="5" max="80" value="25" oninput="updateBgRemoval()">
+    </div>
+    <button class="btn-main" style="background: linear-gradient(135deg, #e91e63, #9c27b0);" onclick="exportBgImage()">💾 تصدير PNG شفافة بدقة فائقة</button>
+  </div>
+</div>
+
+<!-- TAB 3: WATERMARK REMOVER -->
+<div id="watermarkTab" class="tab-content">
+  <div class="section-card">
+    <div class="upload-box" onclick="document.getElementById('inputWM').click()">
+      <p>🧼 اضغط هنا لاختيار صورة لمسح العلامة المائية</p>
+      <input type="file" id="inputWM" accept="image/*" style="display:none;" onchange="loadWMImage(event)">
+    </div>
+    <div class="preview-container" id="wmContainer">
+      <canvas id="canvasWM"></canvas>
+      <div id="maskOverlay"></div>
+    </div>
+    <div class="res-badge" id="resWM">حدد المربع القابل للسحب فوق العلامة المائية تماماً</div>
+    <button class="btn-main" style="background: linear-gradient(135deg, #00b09b, #96c93d);" onclick="eraseWatermarkArea()">🧼 تطبيق المسح الذكي الحقيقي</button>
+    <button class="btn-main" style="margin-top:8px;" onclick="exportWMImage()">💾 تصدير الملف النظيف</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let origEnhanceImg = null, origBgImg = null, origWMImg = null, currentEnhanceRatio = 'original';
+
+function showAd() {
+  if (window.AndroidNativeAd && typeof window.AndroidNativeAd.showInterstitial === 'function') {
+    try { window.AndroidNativeAd.showInterstitial(); } catch (e) {}
+  }
+  if (window.startapp && typeof window.startapp.showAd === 'function') {
+    try { window.startapp.showAd(); } catch (e) {}
+  }
+}
+
+window.addEventListener('load', function() {
+  setTimeout(showAd, 1500);
+});
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerText = msg;
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  if (btn) btn.classList.add('active');
+  showAd();
+}
+
+// TAB 1
+function loadEnhanceImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    origEnhanceImg = new Image();
+    origEnhanceImg.onload = function() { applyEnhanceFilters(); };
+    origEnhanceImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setEnhanceRatio(ratio, btn) {
+  currentEnhanceRatio = ratio;
+  document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyEnhanceFilters();
+}
+
+function applyEnhanceFilters() {
+  if (!origEnhanceImg) return;
+  const canvas = document.getElementById('canvasEnhance');
+  const ctx = canvas.getContext('2d');
+  const sharp = document.getElementById('sliderSharp').value;
+  const contrast = document.getElementById('sliderContrast').value;
+
+  document.getElementById('valSharp').innerText = sharp + '%';
+  document.getElementById('valContrast').innerText = contrast + '%';
+
+  let targetW = origEnhanceImg.naturalWidth;
+  let targetH = origEnhanceImg.naturalHeight;
+
+  if (currentEnhanceRatio === '1:1') targetH = targetW;
+  else if (currentEnhanceRatio === '9:16') targetH = Math.round(targetW * (16 / 9));
+  else if (currentEnhanceRatio === '16:9') targetH = Math.round(targetW * (9 / 16));
+
+  canvas.width = targetW; 
+  canvas.height = targetH;
+  ctx.filter = `contrast(${contrast}%) brightness(102%)`;
+
+  const imgAspect = origEnhanceImg.naturalWidth / origEnhanceImg.naturalHeight;
+  const targetAspect = targetW / targetH;
+  let renderW = targetW, renderH = targetH, offsetX = 0, offsetY = 0;
+
+  if (imgAspect > targetAspect) {
+    renderH = targetH; renderW = targetH * imgAspect; offsetX = (targetW - renderW) / 2;
+  } else {
+    renderW = targetW; renderH = targetW / imgAspect; offsetY = (targetH - renderH) / 2;
+  }
+
+  ctx.drawImage(origEnhanceImg, offsetX, offsetY, renderW, renderH);
+  document.getElementById('resEnhance').innerText = `أبعاد الملف النهائي: ${targetW} × ${targetH} px`;
+}
+
+function exportEnhanceImage() {
+  const canvas = document.getElementById('canvasEnhance');
+  if (!canvas.width) { showToast("اختر صورة أولاً!"); return; }
+  showAd();
+  const link = document.createElement('a');
+  link.download = 'PixiMax_4K.png';
+  link.href = canvas.toDataURL('image/png', 1.0);
+  link.click();
+  showToast("تم الحفظ بنجاح! ✨");
+}
+
+// TAB 2: BG REMOVAL
+function loadBgImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    origBgImg = new Image();
+    origBgImg.onload = function() { updateBgRemoval(); };
+    origBgImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateBgRemoval() {
+  if (!origBgImg) return;
+  const canvas = document.getElementById('canvasBg');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const tol = parseInt(document.getElementById('sliderTol').value);
+  document.getElementById('valTol').innerText = tol;
+
+  canvas.width = origBgImg.naturalWidth;
+  canvas.height = origBgImg.naturalHeight;
+  ctx.drawImage(origBgImg, 0, 0);
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  const cornerR = data[0], cornerG = data[1], cornerB = data[2];
+
+  for (let i = 0; i < data.length; i += 4) {
+    const diff = Math.sqrt(Math.pow(data[i] - cornerR, 2) + Math.pow(data[i+1] - cornerG, 2) + Math.pow(data[i+2] - cornerB, 2));
+    if (diff < tol * 2.5) data[i + 3] = 0;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  document.getElementById('resBg').innerText = `أبعاد الصورة الشفافة: ${canvas.width} × ${canvas.height} px`;
+}
+
+function exportBgImage() {
+  const canvas = document.getElementById('canvasBg');
+  if (!canvas.width) { showToast("اختر صورة أولاً!"); return; }
+  showAd();
+  const link = document.createElement('a');
+  link.download = 'PixiMax_Transparent.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast("تم الحفظ بنجاح! ✨");
+}
+
+// TAB 3: WATERMARK ERASER
+function loadWMImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    origWMImg = new Image();
+    origWMImg.onload = function() {
+      const canvas = document.getElementById('canvasWM');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      canvas.width = origWMImg.naturalWidth;
+      canvas.height = origWMImg.naturalHeight;
+      ctx.drawImage(origWMImg, 0, 0);
+
+      const mask = document.getElementById('maskOverlay');
+      mask.style.display = 'block'; 
+      mask.style.width = '80px'; 
+      mask.style.height = '40px';
+      
+      const container = document.getElementById('wmContainer');
+      mask.style.left = Math.max(10, container.clientWidth / 2 - 40) + 'px';
+      mask.style.top = Math.max(10, container.clientHeight / 2 - 20) + 'px';
+      document.getElementById('resWM').innerText = `أبعاد الملف: ${canvas.width} × ${canvas.height} px`;
+    };
+    origWMImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function eraseWatermarkArea() {
+  const canvas = document.getElementById('canvasWM');
+  if (!canvas.width) { showToast("اختر صورة أولاً!"); return; }
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const mask = document.getElementById('maskOverlay');
+  const rect = mask.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+
+  if (canvasRect.width === 0 || canvasRect.height === 0) return;
+
+  const scaleX = canvas.width / canvasRect.width;
+  const scaleY = canvas.height / canvasRect.height;
+
+  const maskX = Math.round((rect.left - canvasRect.left) * scaleX);
+  const maskY = Math.round((rect.top - canvasRect.top) * scaleY);
+  const maskW = Math.round(rect.width * scaleX);
+  const maskH = Math.round(rect.height * scaleY);
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+
+  for (let y = maskY; y < maskY + maskH; y++) {
+    for (let x = maskX; x < maskX + maskW; x++) {
+      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
+      const sampleY = Math.max(0, maskY - 3);
+      const idx = (y * canvas.width + x) * 4;
+      const sampleIdx = (sampleY * canvas.width + x) * 4;
+      data[idx] = data[sampleIdx]; 
+      data[idx+1] = data[sampleIdx+1]; 
+      data[idx+2] = data[sampleIdx+2];
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  showToast("تم مسح العلامة المائية بنجاح! ✨");
+}
+
+function exportWMImage() {
+  const canvas = document.getElementById('canvasWM');
+  if (!canvas.width) { showToast("اختر صورة أولاً!"); return; }
+  showAd();
+  const link = document.createElement('a');
+  link.download = 'PixiMax_Cleaned.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast("تم الحفظ بنجاح! ✨");
+}
+
+// Drag functionality for watermark mask
+const mask = document.getElementById('maskOverlay');
+let isDragging = false, startX, startY, initialLeft, initialTop;
+
+mask.addEventListener('pointerdown', function(e) {
+  isDragging = true; 
+  startX = e.clientX; 
+  startY = e.clientY;
+  initialLeft = mask.offsetLeft; 
+  initialTop = mask.offsetTop;
+  mask.setPointerCapture(e.pointerId);
+});
+
+mask.addEventListener('pointermove', function(e) {
+  if (!isDragging) return;
+  mask.style.left = (initialLeft + (e.clientX - startX)) + 'px';
+  mask.style.top = (initialTop + (e.clientY - startY)) + 'px';
+});
+
+mask.addEventListener('pointerup', function(e) { 
+  isDragging = false; 
+  try { mask.releasePointerCapture(e.pointerId); } catch(err){}
+});
+</script>
+</body>
+</html>

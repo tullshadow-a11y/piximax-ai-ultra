@@ -1,0 +1,6 @@
+{
+  "name": "PixiMax AI Ultra",
+  "description": "PixiMax AI Ultra by NovaCore Software - 4K image enhancement, background removal, and smart watermark erasing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
