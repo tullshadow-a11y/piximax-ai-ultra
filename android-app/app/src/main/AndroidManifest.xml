@@ -17,6 +17,11 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.MyApplication">
+
+        <meta-data
+            android:name="com.startapp.sdk.APPLICATION_ID"
+            android:value="207695262" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

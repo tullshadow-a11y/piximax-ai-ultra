@@ -35,6 +35,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Initialize Start.io Native SDK with App ID 207695262
+        com.startapp.sdk.adsbase.StartAppSDK.init(this, "207695262", false)
+        com.startapp.sdk.adsbase.StartAppSDK.enableReturnAds(false)
+
         // Replace browser localStorage with native SharedPreferences
         sharedPreferences = getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
 
