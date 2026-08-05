@@ -199,6 +199,20 @@ object ImageProcessor {
     }
 
     /**
+     * Rotates a bitmap by a specified angle and flips it horizontally if requested.
+     * Matches Web App's "Rotate & Flip" logic.
+     */
+    fun rotateAndFlip(src: Bitmap, degrees: Int, flipHorizontal: Boolean): Bitmap {
+        val matrix = android.graphics.Matrix().apply {
+            postRotate(degrees.toFloat())
+            if (flipHorizontal) {
+                postScale(-1f, 1f)
+            }
+        }
+        return Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
+    }
+
+    /**
      * Smudges out watermark region using colors sampled above it.
      * Matches Web App's "Watermark Eraser" logic.
      */

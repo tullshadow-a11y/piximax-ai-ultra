@@ -36,6 +36,18 @@ class ImageProcessorTest {
     }
 
     @Test
+    fun testRotateAndFlip() {
+        val bitmap = Bitmap.createBitmap(100, 50, Bitmap.Config.ARGB_8888)
+        bitmap.setPixel(0, 0, android.graphics.Color.RED)
+
+        // Rotate 90 degrees and flip horizontal
+        val rotated = ImageProcessor.rotateAndFlip(bitmap, 90, true)
+        assertNotNull(rotated)
+        assertEquals(50, rotated.width) // rotated 90 deg width becomes original height
+        assertEquals(100, rotated.height) // rotated 90 deg height becomes original width
+    }
+
+    @Test
     fun testRemoveBackground() {
         val bitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
         bitmap.setPixel(0, 0, android.graphics.Color.RED)

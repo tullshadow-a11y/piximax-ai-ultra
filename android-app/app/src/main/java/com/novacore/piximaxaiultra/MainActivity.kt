@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.novacore.piximaxaiultra.ui.screens.BgRemovalScreen
 import com.novacore.piximaxaiultra.ui.screens.EnhanceScreen
+import com.novacore.piximaxaiultra.ui.screens.RotateScreen
 import com.novacore.piximaxaiultra.ui.screens.WatermarkScreen
 import com.novacore.piximaxaiultra.ui.theme.*
 
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
                         // Header matching original visual identity
                         AppHeader()
 
-                        // Tabs Row matching original tabs structure
+                        // Tabs Row matching original updated 4-tabs structure
                         NavigationTabs(
                             selectedTab = selectedTab,
                             onTabSelected = { selectedTab = it }
@@ -76,8 +77,9 @@ class MainActivity : ComponentActivity() {
                         Box(modifier = Modifier.weight(1f)) {
                             when (selectedTab) {
                                 0 -> EnhanceScreen()
-                                1 -> BgRemovalScreen()
-                                2 -> WatermarkScreen()
+                                1 -> RotateScreen()
+                                2 -> BgRemovalScreen()
+                                3 -> WatermarkScreen()
                             }
                         }
                     }
@@ -140,12 +142,13 @@ fun NavigationTabs(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         val tabs = listOf(
-            "✨ رفع الجودة والأنيميشن",
+            "✨ رفع الجودة",
+            "🔄 تدوير وقص",
             "✂️ إزالة الخلفية",
-            "🧼 مسح العلامة المائية"
+            "🧼 مسح العلامة"
         )
 
         tabs.forEachIndexed { index, title ->
@@ -163,13 +166,13 @@ fun NavigationTabs(
                     .background(tabBackground)
                     .border(1.dp, if (isActive) AccentBlue else BorderColor, RoundedCornerShape(10.dp))
                     .clickable { onTabSelected(index) }
-                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                    .padding(vertical = 10.dp, horizontal = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = title,
                     color = if (isActive) Color.White else TextSub,
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     maxLines = 1
