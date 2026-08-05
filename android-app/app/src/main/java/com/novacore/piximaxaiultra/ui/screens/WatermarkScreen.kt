@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.novacore.piximaxaiultra.ui.theme.*
 import com.novacore.piximaxaiultra.utils.ImageProcessor
 import com.novacore.piximaxaiultra.utils.ImageUtils
+import com.startapp.sdk.adsbase.StartAppAd
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,6 +45,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun WatermarkScreen() {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -51,11 +54,21 @@ fun WatermarkScreen() {
 
     var isProcessing by remember { mutableStateOf(false) }
 
-    // Coordinates for the draggable mask
-    var maskOffset by remember { mutableStateOf(Offset(100f, 100f)) }
-    val maskSizeDp = Pair(100.dp, 50.dp) // Fixed physical size for high-accuracy dragging
+    // Selection dimensions (in dp, adjustable via sliders)
+    var maskWidthDp by remember { mutableStateOf(100f) }
+    var maskHeightDp by remember { mutableStateOf(50f) }
 
+    // Absolute screen-pixel coordinates of the selection box relative to container top-left
+    var maskOffset by remember { mutableStateOf(Offset(0f, 0f)) }
+
+    // Container size tracking
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Geometry parameters of the actual drawn image area within container (Fit content scale)
+    var drawLeft by remember { mutableStateOf(0f) }
+    var drawTop by remember { mutableStateOf(0f) }
+    var drawW by remember { mutableStateOf(0f) }
+    var drawH by remember { mutableStateOf(0f) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -68,10 +81,61 @@ fun WatermarkScreen() {
                     ImageUtils.loadBitmapFromUri(context, uri)
                 }
                 originalBitmap = bmp
-                processedBitmap = bmp // Initial display is original
+                processedBitmap = bmp
                 isProcessing = false
+
+                // Reset position to center of screen/container
+                maskOffset = Offset(100f, 100f)
             }
         }
+    }
+
+    // Dynamic geometry recalculation whenever containerSize or processedBitmap changes
+    LaunchedEffect(containerSize, processedBitmap) {
+        val bmp = processedBitmap ?: return@LaunchedEffect
+        val containerW = containerSize.width.toFloat()
+        val containerH = containerSize.height.toFloat()
+        if (containerW <= 0f || containerH <= 0f) return@LaunchedEffect
+
+        val imgAspect = bmp.width.toFloat() / bmp.height.toFloat()
+        val containerAspect = containerW / containerH
+
+        if (imgAspect > containerAspect) {
+            drawW = containerW
+            drawH = containerW / imgAspect
+            drawLeft = 0f
+            drawTop = (containerH - drawH) / 2f
+        } else {
+            drawH = containerH
+            drawW = containerH * imgAspect
+            drawLeft = (containerW - drawW) / 2f
+            drawTop = 0f
+        }
+
+        // Initially place mask in the center of the actual drawn image
+        val maskW = with(density) { maskWidthDp.dp.toPx() }
+        val maskH = with(density) { maskHeightDp.dp.toPx() }
+        maskOffset = Offset(
+            x = drawLeft + (drawW - maskW) / 2f,
+            y = drawTop + (drawH - maskH) / 2f
+        )
+    }
+
+    // Keep mask strictly constrained within drawn image bounds
+    val maskWidthPx = with(density) { maskWidthDp.dp.toPx() }
+    val maskHeightPx = with(density) { maskHeightDp.dp.toPx() }
+
+    LaunchedEffect(maskWidthDp, maskHeightDp, drawLeft, drawTop, drawW, drawH) {
+        if (drawW <= 0f || drawH <= 0f) return@LaunchedEffect
+        val xMin = drawLeft
+        val xMax = (drawLeft + drawW - maskWidthPx).coerceAtLeast(drawLeft)
+        val yMin = drawTop
+        val yMax = (drawTop + drawH - maskHeightPx).coerceAtLeast(drawTop)
+
+        maskOffset = Offset(
+            x = maskOffset.x.coerceIn(xMin, xMax),
+            y = maskOffset.y.coerceIn(yMin, yMax)
+        )
     }
 
     Column(
@@ -105,7 +169,7 @@ fun WatermarkScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Draggable Image Area
+        // Draggable Preview Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -119,10 +183,7 @@ fun WatermarkScreen() {
             contentAlignment = Alignment.Center
         ) {
             if (processedBitmap != null) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // Render image
+                Box(modifier = Modifier.fillMaxSize()) {
                     Image(
                         bitmap = processedBitmap!!.asImageBitmap(),
                         contentDescription = "Watermark Preview",
@@ -130,32 +191,37 @@ fun WatermarkScreen() {
                         contentScale = ContentScale.Fit
                     )
 
-                    // Draggable mask overlay
-                    val contextDensity = androidx.compose.ui.platform.LocalDensity.current
-                    val maskWidthPx = with(contextDensity) { maskSizeDp.first.toPx() }
-                    val maskHeightPx = with(contextDensity) { maskSizeDp.second.toPx() }
-
+                    // Selection box with corner visual handles and drag detection
                     Box(
                         modifier = Modifier
                             .offset(
-                                x = with(contextDensity) { maskOffset.x.toDp() },
-                                y = with(contextDensity) { maskOffset.y.toDp() }
+                                x = with(density) { maskOffset.x.toDp() },
+                                y = with(density) { maskOffset.y.toDp() }
                             )
-                            .size(maskSizeDp.first, maskSizeDp.second)
-                            .border(BorderStroke(2.dp, Color(0xFF00FFCC)), RoundedCornerShape(4.dp))
-                            .background(Color(0xFF00FFCC).copy(alpha = 0.2f))
-                            .pointerInput(containerSize) {
+                            .size(maskWidthDp.dp, maskHeightDp.dp)
+                            .border(BorderStroke(2.dp, SuccessGreen), RoundedCornerShape(4.dp))
+                            .background(SuccessGreen.copy(alpha = 0.15f))
+                            .pointerInput(drawLeft, drawTop, drawW, drawH, maskWidthPx, maskHeightPx) {
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
-                                    val limitX = (containerSize.width - maskWidthPx).coerceAtLeast(0f)
-                                    val limitY = (containerSize.height - maskHeightPx).coerceAtLeast(0f)
+                                    val xMin = drawLeft
+                                    val xMax = (drawLeft + drawW - maskWidthPx).coerceAtLeast(drawLeft)
+                                    val yMin = drawTop
+                                    val yMax = (drawTop + drawH - maskHeightPx).coerceAtLeast(drawTop)
+
                                     maskOffset = Offset(
-                                        x = (maskOffset.x + dragAmount.x).coerceIn(0f, limitX),
-                                        y = (maskOffset.y + dragAmount.y).coerceIn(0f, limitY)
+                                        x = (maskOffset.x + dragAmount.x).coerceIn(xMin, xMax),
+                                        y = (maskOffset.y + dragAmount.y).coerceIn(yMin, yMax)
                                     )
                                 }
                             }
-                    )
+                    ) {
+                        // Four custom visual corner handles to represent professional selector
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.TopStart))
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.TopEnd))
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.BottomStart))
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.BottomEnd))
+                    }
                 }
             } else {
                 Text(
@@ -178,63 +244,103 @@ fun WatermarkScreen() {
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Text(
             text = "حدد المربع القابل للسحب فوق العلامة المائية تماماً",
             color = TextSub,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Medium
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Sliders for Width and Height
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(CardBg)
+                .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
+                .padding(14.dp)
+        ) {
+            // Width Slider
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = "عرض صندوق التحديد (Width)", color = TextSub, fontSize = 11.sp)
+                Text(text = "${maskWidthDp.toInt()} dp", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = maskWidthDp,
+                onValueChange = { maskWidthDp = it },
+                valueRange = 20f..200f,
+                colors = SliderDefaults.colors(
+                    thumbColor = SuccessGreen,
+                    activeTrackColor = SuccessGreen,
+                    inactiveTrackColor = BorderColor
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Height Slider
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = "ارتفاع صندوق التحديد (Height)", color = TextSub, fontSize = 11.sp)
+                Text(text = "${maskHeightDp.toInt()} dp", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = maskHeightDp,
+                onValueChange = { maskHeightDp = it },
+                valueRange = 10f..150f,
+                colors = SliderDefaults.colors(
+                    thumbColor = SuccessGreen,
+                    activeTrackColor = SuccessGreen,
+                    inactiveTrackColor = BorderColor
+                )
+            )
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Smart Erase Button
         Button(
             onClick = {
                 val currentBmp = originalBitmap
-                val containerW = containerSize.width.toFloat()
-                val containerH = containerSize.height.toFloat()
-
-                if (currentBmp == null || containerW <= 0f || containerH <= 0f) {
+                if (currentBmp == null || drawW <= 0f || drawH <= 0f) {
                     Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
+                // Show Start.io Interstitial Ad on Export/Processing
+                StartAppAd.showAd(context)
+
+                // Capture EXACT current coordinates relative to drawn bounds
+                val liveMaskOffset = maskOffset
+                val liveMaskWidthPx = maskWidthPx
+                val liveMaskHeightPx = maskHeightPx
+                val liveDrawLeft = drawLeft
+                val liveDrawTop = drawTop
+                val liveDrawW = drawW
+                val liveDrawH = drawH
+
                 isProcessing = true
                 coroutineScope.launch {
                     val result = withContext(Dispatchers.Default) {
-                        // Calculate precise sub-region bounding box percentages
-                        val imgAspect = currentBmp.width.toFloat() / currentBmp.height.toFloat()
-                        val containerAspect = containerW / containerH
+                        // Map coordinates relative to the drawn image bounds
+                        val touchX = liveMaskOffset.x - liveDrawLeft
+                        val touchY = liveMaskOffset.y - liveDrawTop
 
-                        val drawW: Float
-                        val drawH: Float
-                        val drawLeft: Float
-                        val drawTop: Float
-
-                        if (imgAspect > containerAspect) {
-                            drawW = containerW
-                            drawH = containerW / imgAspect
-                            drawLeft = 0f
-                            drawTop = (containerH - drawH) / 2f
-                        } else {
-                            drawH = containerH
-                            drawW = containerH * imgAspect
-                            drawLeft = (containerW - drawW) / 2f
-                            drawTop = 0f
-                        }
-
-                        // Convert physical sizes to pixels for calculation
-                        val contextDensity = context.resources.displayMetrics.density
-                        val maskW = 100f * contextDensity
-                        val maskH = 50f * contextDensity
-
-                        val relativeLeft = (maskOffset.x - drawLeft) / drawW
-                        val relativeTop = (maskOffset.y - drawTop) / drawH
-                        val relativeW = maskW / drawW
-                        val relativeH = maskH / drawH
+                        // Scale relative to drawn view width and height
+                        val relativeLeft = touchX / liveDrawW
+                        val relativeTop = touchY / liveDrawH
+                        val relativeW = liveMaskWidthPx / liveDrawW
+                        val relativeH = liveMaskHeightPx / liveDrawH
 
                         ImageProcessor.eraseWatermark(
                             src = currentBmp,
@@ -246,7 +352,7 @@ fun WatermarkScreen() {
                     }
 
                     processedBitmap = result
-                    originalBitmap = result // So that we can run multi-erase on the same file!
+                    originalBitmap = result // support subsequent/chained erasure
                     isProcessing = false
                     Toast.makeText(context, "تم مسح العلامة المائية بنجاح! ✨", Toast.LENGTH_LONG).show()
                 }
@@ -283,6 +389,10 @@ fun WatermarkScreen() {
                     Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
+
+                // Show Start.io Interstitial Ad on Export
+                StartAppAd.showAd(context)
+
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Cleaned_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
                     Toast.makeText(context, "تم الحفظ بنجاح! ✨", Toast.LENGTH_LONG).show()

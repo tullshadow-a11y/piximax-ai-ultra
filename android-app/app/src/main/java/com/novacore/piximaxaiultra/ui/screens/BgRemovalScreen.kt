@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.novacore.piximaxaiultra.ui.theme.*
 import com.novacore.piximaxaiultra.utils.ImageProcessor
 import com.novacore.piximaxaiultra.utils.ImageUtils
+import com.startapp.sdk.adsbase.StartAppAd
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -217,6 +218,10 @@ fun BgRemovalScreen() {
                     Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
+
+                // Show Start.io Interstitial Ad on Export
+                StartAppAd.showAd(context)
+
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Transparent_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
                     Toast.makeText(context, "تم الحفظ بنجاح! ✨", Toast.LENGTH_LONG).show()

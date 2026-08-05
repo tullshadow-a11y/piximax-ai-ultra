@@ -2,13 +2,14 @@ package com.novacore.piximaxaiultra.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val BgColor = Color(0xFF0B0F19)
-val CardBg = Color(0xFF151C2C)
-val BorderColor = Color(0xFF232E48)
-val AccentBlue = Color(0xFF0088FF)
-val AccentPurple = Color(0xFF8A2BE2)
-val TextMain = Color(0xFFF0F4F8)
+val BgColor = Color(0xFF07090E)
+val CardBg = Color(0xFF111827)
+val BorderColor = Color(0xFF1E293B)
+val AccentBlue = Color(0xFF3B82F6)
+val AccentPurple = Color(0xFF8B5CF6)
+val TextMain = Color(0xFFF8FAFC)
 val TextSub = Color(0xFF94A3B8)
+val SuccessGreen = Color(0xFF10B981)
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

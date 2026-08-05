@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixiMax Pro - AI Studio</title>
+<style>
+:root {
+  --bg-color: #07090e;
+  --card-bg: #111827;
+  --card-hover: #1f293d;
+  --border-color: #1e293b;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-glow: rgba(59, 130, 246, 0.3);
+  --text-main: #f8fafc;
+  --text-sub: #94a3b8;
+  --success: #10b981;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  padding: 10px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 50px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #111827, #1e1b4b);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.app-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-logo {
+  font-size: 26px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.app-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+.dev-title { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+.badge {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.tab-btn {
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-sub);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  border-color: var(--accent-blue);
+  color: #fff;
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.section-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.upload-box {
+  border: 2px dashed var(--accent-blue);
+  background: rgba(59, 130, 246, 0.03);
+  border-radius: 14px;
+  padding: 24px 12px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+.upload-box:active { background: rgba(59, 130, 246, 0.1); }
+.upload-box p { font-size: 13px; color: #93c5fd; font-weight: bold; margin-top: 6px; }
+.upload-icon { font-size: 28px; }
+
+.preview-container {
+  position: relative;
+  width: 100%;
+  background: #030712;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 220px;
+  max-height: 380px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 10px;
+}
+
+canvas { max-width: 100%; max-height: 360px; object-fit: contain; display: block; }
+.res-badge { font-size: 11px; color: var(--text-sub); text-align: center; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 8px;}
+
+.tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+.tool-btn {
+  background: #0f172a; border: 1px solid var(--border-color);
+  color: var(--text-sub); padding: 8px 4px; border-radius: 10px;
+  font-size: 11px; font-weight: bold; cursor: pointer; text-align: center;
+}
+.tool-btn.active { border-color: var(--accent-blue); background: var(--accent-blue); color: #fff; }
+
+.slider-group { margin-bottom: 12px; background: rgba(255,255,255,0.01); padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); }
+.slider-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-sub); margin-bottom: 6px; }
+.slider-label span:last-child { color: var(--accent-blue); font-weight: bold; }
+input[type="range"] { width: 100%; accent-color: var(--accent-blue); cursor: pointer; }
+
+.btn-main {
+  width: 100%; padding: 13px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  color: #fff; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 6px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: transform 0.1s;
+}
+.btn-main:active { transform: scale(0.98); }
+
+.btn-sec {
+  background: #1e293b; color: #cbd5e1; border: 1px solid var(--border-color);
+  margin-top: 6px; box-shadow: none;
+}
+
+#maskOverlay {
+  position: absolute; border: 2px dashed #10b981;
+  background: rgba(16, 185, 129, 0.2); cursor: move; display: none;
+  border-radius: 4px;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title-group">
+    <div class="app-logo">✨</div>
+    <div>
+      <div class="app-title">PixiMax Studio</div>
+      <div class="dev-title">NovaCore Software</div>
+    </div>
+  </div>
+  <span class="badge">PRO 4K</span>
+</div>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="switchTab('enhanceTab', this)">✨ رفع الجودة</button>
+  <button class="tab-btn" onclick="switchTab('rotateTab', this)">🔄 تدوير وقص</button>
+  <button class="tab-btn" onclick="switchTab('removeBgTab', this)">✂️ تفريغ الخلفية</button>
+  <button class="tab-btn" onclick="switchTab('watermarkTab', this)">🧼 إزالة الشعار</button>
+</div>
+
+<!-- TAB 1: ENHANCE & RATIO -->
+<div id="enhanceTab" class="tab-content active">
+  <div class="section-card">
+    <div class="upload-box" onclick="document.getElementById('inputEnhance').click()">
+      <div class="upload-icon">📁</div>
+      <p>اضغط لاختيار صورة لتحسينها ورفع دقتها</p>
+      <input type="file" id="inputEnhance" accept="image/*" style="display:none;" onchange="loadEnhanceImage(event)">
+    </div>
+    <div class="preview-container"><canvas id="canvasEnhance"></canvas></div>
+    <div class="res-badge" id="resEnhance">أبعاد الصورة: -</div>
+
+    <div class="tools-grid">
+      <button class="tool-btn active" onclick="setEnhanceRatio('original', this)">أصلي</button>
+      <button class="tool-btn" onclick="setEnhanceRatio('1:1', this)">مربع 1:1</button>
+      <button class="tool-btn" onclick="setEnhanceRatio('9:16', this)">ستوري 9:16</button>
+      <button class="tool-btn" onclick="setEnhanceRatio('16:9', this)">عرضي 16:9</button>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label"><span>الحدة والوضوح (Sharpness)</span><span id="valSharp">130%</span></div>
+      <input type="range" id="sliderSharp" min="100" max="200" value="130" oninput="applyEnhanceFilters()">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>التباين الذكي (Contrast)</span><span id="valContrast">115%</span></div>
+      <input type="range" id="sliderContrast" min="100" max="170" value="115" oninput="applyEnhanceFilters()">
+    </div>
+
+    <button class="btn-main" onclick="exportEnhanceImage()">💾 حفظ الصورة بجودة 4K فائقة</button>
+  </div>
+</div>
+
+<!-- TAB 2: ROTATE & FLIP -->
+<div id="rotateTab" class="tab-content">
+  <div class="section-card">
+    <div class="upload-box" onclick="document.getElementById('inputRotate').click()">
+      <div class="upload-icon">🔄</div>
+      <p>اختر صورة لتدويرها أو عكسها اتجاهياً</p>
+      <input type="file" id="inputRotate" accept="image/*" style="display:none;" onchange="loadRotateImage(event)">
+    </div>
+    <div class="preview-container"><canvas id="canvasRotate"></canvas></div>
+
+    <div class="tools-grid" style="grid-template-columns: repeat(2, 1fr);">
+      <button class="tool-btn" onclick="rotateImage(90)">↻ تدوير 90°</button>
+      <button class="tool-btn" onclick="flipImage('h')">↔ انعكاس أفقي</button>
+    </div>
+    <button class="btn-main" onclick="exportRotateImage()">💾 تصدير الصورة المعدلة</button>
+  </div>
+</div>
+
+<!-- TAB 3: BG REMOVAL -->
+<div id="removeBgTab" class="tab-content">
+  <div class="section-card">
+    <div class="upload-box" onclick="document.getElementById('inputBg').click()">
+      <div class="upload-icon">✂️</div>
+      <p>اختر صورة لتفريغ الخلفية تلقائياً (PNG شفاف)</p>
+      <input type="file" id="inputBg" accept="image/*" style="display:none;" onchange="loadBgImage(event)">
+    </div>
+    <div class="preview-container" style="background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 14px 14px;">
+      <canvas id="canvasBg"></canvas>
+    </div>
+    <div class="res-badge" id="resBg">أبعاد الصورة الشفافة: -</div>
+    <div class="slider-group">
+      <div class="slider-label"><span>حساسية عزل الخلفية (Tolerance)</span><span id="valTol">25</span></div>
+      <input type="range" id="sliderTol" min="5" max="80" value="25" oninput="updateBgRemoval()">
+    </div>
+    <button class="btn-main" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);" onclick="exportBgImage()">💾 تحميل صورة شفافة PNG</button>
+  </div>
+</div>
+
+<!-- TAB 4: WATERMARK REMOVER -->
+<div id="watermarkTab" class="tab-content">
+  <div class="section-card">
+    <div class="upload-box" onclick="document.getElementById('inputWM').click()">
+      <div class="upload-icon">🧼</div>
+      <p>اختر صورة لإزالة العلامات المائية منها</p>
+      <input type="file" id="inputWM" accept="image/*" style="display:none;" onchange="loadWMImage(event)">
+    </div>
+    <div class="preview-container" id="wmContainer">
+      <canvas id="canvasWM"></canvas>
+      <div id="maskOverlay"></div>
+    </div>
+    <div class="res-badge" id="resWM">اسحب المربع الأخضر فوق العلامة المائية تماماً</div>
+    <button class="btn-main" style="background: linear-gradient(135deg, #059669, #10b981);" onclick="eraseWatermarkArea()">🧼 تطبيق المسح الذكي</button>
+    <button class="btn-main btn-sec" onclick="exportWMImage()">💾 حفظ الملف النظيف</button>
+  </div>
+</div>
+
+<script>
+let origEnhanceImg = null, origRotateImg = null, origBgImg = null, origWMImg = null;
+let currentEnhanceRatio = 'original';
+let currentRotateAngle = 0, flipH = 1, flipV = 1;
+
+function triggerStartAd() {
+try {
+if (window.startapp && typeof startapp.showAd === 'function') {
+startapp.showAd();
+} else if (window.Android && typeof window.Android.showAd === 'function') {
+window.Android.showAd();
+}
+} catch (e) {
+console.log('Ad Trigger Call', e);
+}
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// TAB 1
+function loadEnhanceImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    origEnhanceImg = new Image();
+    origEnhanceImg.onload = function() { applyEnhanceFilters(); };
+    origEnhanceImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setEnhanceRatio(ratio, btn) {
+  currentEnhanceRatio = ratio;
+  document.querySelectorAll('#enhanceTab .tool-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyEnhanceFilters();
+}
+
+function applyEnhanceFilters() {
+  if (!origEnhanceImg) return;
+  const canvas = document.getElementById('canvasEnhance');
+  const ctx = canvas.getContext('2d');
+  const sharp = document.getElementById('sliderSharp').value;
+  const contrast = document.getElementById('sliderContrast').value;
+
+  document.getElementById('valSharp').innerText = sharp + '%';
+  document.getElementById('valContrast').innerText = contrast + '%';
+
+  let targetW = origEnhanceImg.naturalWidth;
+  let targetH = origEnhanceImg.naturalHeight;
+
+  if (currentEnhanceRatio === '1:1') targetH = targetW;
+  else if (currentEnhanceRatio === '9:16') targetH = Math.round(targetW * (16 / 9));
+  else if (currentEnhanceRatio === '16:9') targetH = Math.round(targetW * (9 / 16));
+
+  canvas.width = targetW; canvas.height = targetH;
+  ctx.filter = `contrast(${contrast}%) brightness(102%) saturate(105%)`;
+
+  const imgAspect = origEnhanceImg.naturalWidth / origEnhanceImg.naturalHeight;
+  const targetAspect = targetW / targetH;
+  let renderW = targetW, renderH = targetH, offsetX = 0, offsetY = 0;
+
+  if (imgAspect > targetAspect) {
+    renderH = targetH; renderW = targetH * imgAspect; offsetX = (targetW - renderW) / 2;
+  } else {
+    renderW = targetW; renderH = targetW / imgAspect; offsetY = (targetH - renderH) / 2;
+  }
+
+  ctx.drawImage(origEnhanceImg, offsetX, offsetY, renderW, renderH);
+  document.getElementById('resEnhance').innerText = `أبعاد الملف النهائي: ${targetW} × ${targetH} px`;
+}
+
+function exportEnhanceImage() {
+  const canvas = document.getElementById('canvasEnhance');
+  if (!canvas.width) return;
+  triggerStartAd();
+  const link = document.createElement('a');
+  link.download = 'PixiMax_4K_Pro.png';
+  link.href = canvas.toDataURL('image/png', 1.0);
+  link.click();
+}
+
+// TAB 2: ROTATE & FLIP
+function loadRotateImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    origRotateImg = new Image();
+    origRotateImg.onload = function() {
+      currentRotateAngle = 0; flipH = 1; flipV = 1;
+      drawRotateImage();
+    };
+    origRotateImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function rotateImage(deg) {
+  currentRotateAngle = (currentRotateAngle + deg) % 360;
+  drawRotateImage();
+}
+
+function flipImage(dir) {
+  if (dir === 'h') flipH *= -1;
+  drawRotateImage();
+}
+
+// Draw rotating image on Canvas
+function drawRotateImage() {
+  if (!origRotateImg) return;
+  const canvas = document.getElementById('canvasRotate');
+  const ctx = canvas.getContext('2d');
+
+  const isRotated90 = (currentRotateAngle === 90 || currentRotateAngle === 270);
+  canvas.width = isRotated90 ? origRotateImg.naturalHeight : origRotateImg.naturalWidth;
+  canvas.height = isRotated90 ? origRotateImg.naturalWidth : origRotateImg.naturalHeight;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((currentRotateAngle * Math.PI) / 180);
+  ctx.scale(flipH, flipV);
+  ctx.drawImage(origRotateImg, -origRotateImg.naturalWidth / 2, -origRotateImg.naturalHeight / 2);
+  ctx.restore();
+}
+
+function exportRotateImage() {
+  const canvas = document.getElementById('canvasRotate');
+  if (!canvas.width) return;
+  triggerStartAd();
+  const link = document.createElement('a');
+  link.download = 'PixiMax_Edited.png';
+  link.href = canvas.toDataURL('image/png', 1.0);
+  link.click();
+}
+
+// TAB 3: BG REMOVAL
+function loadBgImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    origBgImg = new Image();
+    origBgImg.onload = function() { updateBgRemoval(); };
+    origBgImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateBgRemoval() {
+  if (!origBgImg) return;
+  const canvas = document.getElementById('canvasBg');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const tol = parseInt(document.getElementById('sliderTol').value);
+  document.getElementById('valTol').innerText = tol;
+
+  canvas.width = origBgImg.naturalWidth;
+  canvas.height = origBgImg.naturalHeight;
+  ctx.drawImage(origBgImg, 0, 0);
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  const cornerR = data[0], cornerG = data[1], cornerB = data[2];
+
+  for (let i = 0; i < data.length; i += 4) {
+    const diff = Math.sqrt(Math.pow(data[i] - cornerR, 2) + Math.pow(data[i+1] - cornerG, 2) + Math.pow(data[i+2] - cornerB, 2));
+    if (diff < tol * 2.5) data[i + 3] = 0;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  document.getElementById('resBg').innerText = `الأبعاد: ${canvas.width} × ${canvas.height} px`;
+}
+
+function exportBgImage() {
+  const canvas = document.getElementById('canvasBg');
+  if (!canvas.width) return;
+  triggerStartAd();
+  const link = document.createElement('a');
+  link.download = 'PixiMax_Transparent.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// TAB 4: WATERMARK ERASER
+function loadWMImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    origWMImg = new Image();
+    origWMImg.onload = function() {
+      const canvas = document.getElementById('canvasWM');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      canvas.width = origWMImg.naturalWidth;
+      canvas.height = origWMImg.naturalHeight;
+      ctx.drawImage(origWMImg, 0, 0);
+
+      const mask = document.getElementById('maskOverlay');
+      mask.style.display = 'block';
+      mask.style.width = '90px';
+      mask.style.height = '45px';
+      mask.style.left = '30%';
+      mask.style.top = '40%';
+      document.getElementById('resWM').innerText = `أبعاد الملف: ${canvas.width} × ${canvas.height} px`;
+    };
+    origWMImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function eraseWatermarkArea() {
+  const canvas = document.getElementById('canvasWM');
+  if (!canvas.width) return;
+  triggerStartAd();
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const mask = document.getElementById('maskOverlay');
+  const rect = mask.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+
+  const scaleX = canvas.width / canvasRect.width;
+  const scaleY = canvas.height / canvasRect.height;
+
+  const maskX = Math.round((rect.left - canvasRect.left) * scaleX);
+  const maskY = Math.round((rect.top - canvasRect.top) * scaleY);
+  const maskW = Math.round(rect.width * scaleX);
+  const maskH = Math.round(rect.height * scaleY);
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+
+  for (let y = maskY; y < maskY + maskH; y++) {
+    for (let x = maskX; x < maskX + maskW; x++) {
+      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
+      const sampleY = Math.max(0, maskY - 4);
+      const idx = (y * canvas.width + x) * 4;
+      const sampleIdx = (sampleY * canvas.width + x) * 4;
+      data[idx] = data[sampleIdx];
+      data[idx+1] = data[sampleIdx+1];
+      data[idx+2] = data[sampleIdx+2];
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  alert("تمت معالجة وإزالة العلامة بنجاح! ✨");
+}
+
+function exportWMImage() {
+  const canvas = document.getElementById('canvasWM');
+  if (!canvas.width) return;
+  triggerStartAd();
+  const link = document.createElement('a');
+  link.download = 'PixiMax_Cleaned.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Dragging support for Mask Overlay
+const mask = document.getElementById('maskOverlay');
+let isDragging = false, startX, startY, initialLeft, initialTop;
+
+mask.addEventListener('touchstart', function(e) {
+  isDragging = true;
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+  initialLeft = mask.offsetLeft;
+  initialTop = mask.offsetTop;
+});
+
+document.addEventListener('touchmove', function(e) {
+  if (!isDragging) return;
+  mask.style.left = (initialLeft + (e.touches[0].clientX - startX)) + 'px';
+  mask.style.top = (initialTop + (e.touches[0].clientY - startY)) + 'px';
+});
+
+document.addEventListener('touchend', function() { isDragging = false; });
+</script>
+</body>
+</html>
