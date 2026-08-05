@@ -1,182 +1,143 @@
 package com.novacore.piximaxaiultra
 
-import android.content.Context
-import android.content.SharedPreferences
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.webkit.JavascriptInterface
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.novacore.piximaxaiultra.ui.screens.BgRemovalScreen
-import com.novacore.piximaxaiultra.ui.screens.EnhanceScreen
-import com.novacore.piximaxaiultra.ui.screens.RotateScreen
-import com.novacore.piximaxaiultra.ui.screens.WatermarkScreen
-import com.novacore.piximaxaiultra.ui.theme.*
+import androidx.compose.ui.viewinterop.AndroidView
+import com.novacore.piximaxaiultra.ui.theme.PixiMaxTheme
+import com.startapp.sdk.adsbase.StartAppAd
+import com.startapp.sdk.adsbase.StartAppSDK
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var sharedPreferences: SharedPreferences
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+
+    private val fileChooserLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (filePathCallback != null) {
+                val dataIntent = result.data
+                var results: Array<Uri>? = null
+                if (result.resultCode == RESULT_OK && dataIntent != null) {
+                    val dataString = dataIntent.dataString
+                    val clipData = dataIntent.clipData
+                    if (clipData != null) {
+                        results = Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+                    } else if (dataString != null) {
+                        results = arrayOf(Uri.parse(dataString))
+                    }
+                }
+                filePathCallback?.onReceiveValue(results)
+                filePathCallback = null
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         // Initialize Start.io Native SDK with App ID 207695262
-        com.startapp.sdk.adsbase.StartAppSDK.init(this, "207695262", false)
-        com.startapp.sdk.adsbase.StartAppSDK.enableReturnAds(false)
+        StartAppSDK.init(this, "207695262", false)
+        StartAppSDK.enableReturnAds(false)
 
-        // Replace browser localStorage with native SharedPreferences
-        sharedPreferences = getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
-
+        enableEdgeToEdge()
         setContent {
             PixiMaxTheme {
-                var selectedTab by remember {
-                    mutableStateOf(sharedPreferences.getInt("active_tab", 0))
+                var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+
+                BackHandler(enabled = webViewInstance?.canGoBack() == true) {
+                    webViewInstance?.goBack()
                 }
 
-                // Persist selection change
-                LaunchedEffect(selectedTab) {
-                    sharedPreferences.edit().putInt("active_tab", selectedTab).apply()
-                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .background(Color(0xFF07090E))
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        AndroidView(
+                            modifier = Modifier.fillMaxSize(),
+                            factory = { context ->
+                                WebView(context).apply {
+                                    settings.apply {
+                                        javaScriptEnabled = true
+                                        domStorageEnabled = true
+                                        allowFileAccess = true
+                                        allowContentAccess = true
+                                        mediaPlaybackRequiresUserGesture = false
+                                        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                        useWideViewPort = true
+                                        loadWithOverviewMode = true
+                                    }
+                                    // Add Javascript Interfaces for Start.io Ad triggers
+                                    addJavascriptInterface(WebAppInterface(this@MainActivity), "Android")
+                                    addJavascriptInterface(WebAppInterface(this@MainActivity), "AndroidNativeAd")
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = BgColor
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding()
-                            .padding(top = 12.dp, bottom = innerPadding.calculateBottomPadding())
-                    ) {
-                        // Header matching original visual identity
-                        AppHeader()
+                                    webViewClient = WebViewClient()
+                                    webChromeClient = object : WebChromeClient() {
+                                        override fun onShowFileChooser(
+                                            webView: WebView?,
+                                            filePathCallbackParam: ValueCallback<Array<Uri>>?,
+                                            fileChooserParams: FileChooserParams?
+                                        ): Boolean {
+                                            filePathCallback?.onReceiveValue(null)
+                                            filePathCallback = filePathCallbackParam
 
-                        // Tabs Row matching original updated 4-tabs structure
-                        NavigationTabs(
-                            selectedTab = selectedTab,
-                            onTabSelected = { selectedTab = it }
-                        )
-
-                        // Main Content switcher
-                        Box(modifier = Modifier.weight(1f)) {
-                            when (selectedTab) {
-                                0 -> EnhanceScreen()
-                                1 -> RotateScreen()
-                                2 -> BgRemovalScreen()
-                                3 -> WatermarkScreen()
+                                            val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                                                addCategory(Intent.CATEGORY_OPENABLE)
+                                                type = "image/*"
+                                            }
+                                            try {
+                                                fileChooserLauncher.launch(intent)
+                                            } catch (e: Exception) {
+                                                filePathCallback = null
+                                                return false
+                                            }
+                                            return true
+                                        }
+                                    }
+                                    loadUrl("file:///android_asset/index.html")
+                                    webViewInstance = this
+                                }
                             }
-                        }
+                        )
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-fun AppHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(CardBg)
-            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "PixiMax AI",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFFFF9900), Color(0xFFFF5500))))
-                        .padding(horizontal = 6.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = "ULTRA 4K",
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+    inner class WebAppInterface(private val activity: MainActivity) {
+        @JavascriptInterface
+        fun showAd() {
+            activity.runOnUiThread {
+                StartAppAd.showAd(activity)
             }
-            Text(
-                text = "NovaCore Software",
-                color = TextSub,
-                fontSize = 11.sp
-            )
         }
-    }
-}
 
-@Composable
-fun NavigationTabs(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        val tabs = listOf(
-            "✨ رفع الجودة",
-            "🔄 تدوير وقص",
-            "✂️ إزالة الخلفية",
-            "🧼 مسح العلامة"
-        )
-
-        tabs.forEachIndexed { index, title ->
-            val isActive = selectedTab == index
-            val tabBackground = if (isActive) {
-                Brush.linearGradient(listOf(AccentBlue.copy(alpha = 0.25f), AccentPurple.copy(alpha = 0.25f)))
-            } else {
-                Brush.linearGradient(listOf(CardBg, CardBg))
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(tabBackground)
-                    .border(1.dp, if (isActive) AccentBlue else BorderColor, RoundedCornerShape(10.dp))
-                    .clickable { onTabSelected(index) }
-                    .padding(vertical = 10.dp, horizontal = 2.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = title,
-                    color = if (isActive) Color.White else TextSub,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1
-                )
+        @JavascriptInterface
+        fun showInterstitial() {
+            activity.runOnUiThread {
+                StartAppAd.showAd(activity)
             }
         }
     }
