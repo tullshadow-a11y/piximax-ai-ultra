@@ -224,7 +224,7 @@ fun BgRemovalScreen() {
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Transparent_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
-                    Toast.makeText(context, "تم الحفظ بنجاح! ✨", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "تم الحفظ! ✨", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(context, "فشل حفظ الملف", Toast.LENGTH_SHORT).show()
                 }
