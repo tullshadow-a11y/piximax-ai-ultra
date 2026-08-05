@@ -320,14 +320,27 @@ fun WatermarkScreen() {
                 // Show Start.io Interstitial Ad on Export/Processing
                 StartAppAd.showAd(context)
 
+                // Capture EXACT current coordinates relative to drawn bounds
+                val liveMaskOffset = maskOffset
+                val liveMaskWidthPx = maskWidthPx
+                val liveMaskHeightPx = maskHeightPx
+                val liveDrawLeft = drawLeft
+                val liveDrawTop = drawTop
+                val liveDrawW = drawW
+                val liveDrawH = drawH
+
                 isProcessing = true
                 coroutineScope.launch {
                     val result = withContext(Dispatchers.Default) {
-                        // Mathematically perfect touch-coordinate scaling matrix relative to drawn image bounds
-                        val relativeLeft = (maskOffset.x - drawLeft) / drawW
-                        val relativeTop = (maskOffset.y - drawTop) / drawH
-                        val relativeW = maskWidthPx / drawW
-                        val relativeH = maskHeightPx / drawH
+                        // Map coordinates relative to the drawn image bounds
+                        val touchX = liveMaskOffset.x - liveDrawLeft
+                        val touchY = liveMaskOffset.y - liveDrawTop
+
+                        // Scale relative to drawn view width and height
+                        val relativeLeft = touchX / liveDrawW
+                        val relativeTop = touchY / liveDrawH
+                        val relativeW = liveMaskWidthPx / liveDrawW
+                        val relativeH = liveMaskHeightPx / liveDrawH
 
                         ImageProcessor.eraseWatermark(
                             src = currentBmp,
