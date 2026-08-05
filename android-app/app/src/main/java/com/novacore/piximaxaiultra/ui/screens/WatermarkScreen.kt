@@ -199,8 +199,8 @@ fun WatermarkScreen() {
                                 y = with(density) { maskOffset.y.toDp() }
                             )
                             .size(maskWidthDp.dp, maskHeightDp.dp)
-                            .border(BorderStroke(2.dp, Color(0xFF00FFCC)), RoundedCornerShape(4.dp))
-                            .background(Color(0xFF00FFCC).copy(alpha = 0.15f))
+                            .border(BorderStroke(2.dp, SuccessGreen), RoundedCornerShape(4.dp))
+                            .background(SuccessGreen.copy(alpha = 0.15f))
                             .pointerInput(drawLeft, drawTop, drawW, drawH, maskWidthPx, maskHeightPx) {
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
@@ -217,10 +217,10 @@ fun WatermarkScreen() {
                             }
                     ) {
                         // Four custom visual corner handles to represent professional selector
-                        Box(modifier = Modifier.size(6.dp).background(Color(0xFF00FFCC)).align(Alignment.TopStart))
-                        Box(modifier = Modifier.size(6.dp).background(Color(0xFF00FFCC)).align(Alignment.TopEnd))
-                        Box(modifier = Modifier.size(6.dp).background(Color(0xFF00FFCC)).align(Alignment.BottomStart))
-                        Box(modifier = Modifier.size(6.dp).background(Color(0xFF00FFCC)).align(Alignment.BottomEnd))
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.TopStart))
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.TopEnd))
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.BottomStart))
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.BottomEnd))
                     }
                 }
             } else {
@@ -278,8 +278,8 @@ fun WatermarkScreen() {
                 onValueChange = { maskWidthDp = it },
                 valueRange = 20f..200f,
                 colors = SliderDefaults.colors(
-                    thumbColor = Color(0xFF00FFCC),
-                    activeTrackColor = Color(0xFF00FFCC),
+                    thumbColor = SuccessGreen,
+                    activeTrackColor = SuccessGreen,
                     inactiveTrackColor = BorderColor
                 )
             )
@@ -299,8 +299,8 @@ fun WatermarkScreen() {
                 onValueChange = { maskHeightDp = it },
                 valueRange = 10f..150f,
                 colors = SliderDefaults.colors(
-                    thumbColor = Color(0xFF00FFCC),
-                    activeTrackColor = Color(0xFF00FFCC),
+                    thumbColor = SuccessGreen,
+                    activeTrackColor = SuccessGreen,
                     inactiveTrackColor = BorderColor
                 )
             )
