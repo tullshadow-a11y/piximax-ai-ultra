@@ -19,3 +19,4 @@ android-app/.gradle/
 local.properties
 .env
 debug.keystore
+*.jks
