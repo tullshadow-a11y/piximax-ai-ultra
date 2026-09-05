@@ -9,8 +9,8 @@
 <script src="https://cdn.startappservice.com/js/startapp-sdk-latest.net.js" account-id="207695262"></script>
 <style>
 :root {
-  --bg-color: #0b0f19;
-  --card-bg: #151c2c;
+  --bg-color: #000000;
+  --card-bg: #121622;
   --border-color: #232e48;
   --accent-blue: #0088ff;
   --accent-purple: #8a2be2;
@@ -54,10 +54,10 @@ body {
   gap: 10px;
 }
 
-.sparkle-icon {
-  width: 28px;
-  height: 28px;
-  filter: drop-shadow(0 0 6px rgba(0, 136, 255, 0.8));
+.aperture-icon {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 8px rgba(0, 210, 255, 0.8));
 }
 
 .app-title { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
@@ -67,6 +67,16 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.export-badge {
+  background: rgba(0, 210, 255, 0.12);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 8px;
 }
 
 .badge-pro {
@@ -217,11 +227,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* Modal Sign-in */
+/* Modal Whop Pro */
 .modal-backdrop {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.85);
   display: none;
   justify-content: center;
   align-items: center;
@@ -232,13 +242,14 @@ input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
   background: var(--card-bg);
   border: 1px solid var(--accent-blue);
   border-radius: 16px;
-  padding: 20px;
+  padding: 22px;
   width: 100%;
   max-width: 400px;
   text-align: center;
+  box-shadow: 0 0 20px rgba(0, 136, 255, 0.3);
 }
 .modal-card h3 { color: #fff; margin-bottom: 8px; font-size: 18px; }
-.modal-card p { font-size: 12px; color: var(--text-sub); margin-bottom: 16px; }
+.modal-card p { font-size: 12px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5; }
 .modal-card input {
   width: 100%;
   padding: 10px;
@@ -267,20 +278,26 @@ input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
 
 <div class="app-header">
   <div class="logo-container">
-    <svg class="sparkle-icon" viewBox="0 0 100 100">
+    <svg class="aperture-icon" viewBox="0 0 100 100">
       <defs>
         <radialGradient id="hGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="#00d2ff" stop-opacity="0.9"/>
-          <stop offset="100%" stop-color="#0088ff" stop-opacity="0"/>
+          <stop offset="60%" stop-color="#8a2be2" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="hGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#38bdf8"/>
+          <stop offset="0%" stop-color="#00d2ff"/>
+          <stop offset="50%" stop-color="#0088ff"/>
           <stop offset="100%" stop-color="#8a2be2"/>
         </linearGradient>
       </defs>
-      <circle cx="50" cy="50" r="42" fill="url(#hGlow)"/>
-      <path d="M 50 12 Q 50 50 12 50 Q 50 50 50 88 Q 50 50 88 50 Q 50 50 50 12 Z" fill="url(#hGrad)"/>
-      <path d="M 74 18 Q 74 28 64 28 Q 74 28 74 38 Q 74 28 84 28 Q 74 28 74 18 Z" fill="#38bdf8"/>
+      <circle cx="50" cy="50" r="44" fill="url(#hGlow)"/>
+      <circle cx="50" cy="50" r="38" fill="none" stroke="url(#hGrad)" stroke-width="3" opacity="0.9"/>
+      <path d="M 50 12 L 62 26 L 50 26 Z" fill="url(#hGrad)" opacity="0.6"/>
+      <path d="M 88 50 L 74 62 L 74 50 Z" fill="url(#hGrad)" opacity="0.6"/>
+      <path d="M 50 88 L 38 74 L 50 74 Z" fill="url(#hGrad)" opacity="0.6"/>
+      <path d="M 12 50 L 26 38 L 26 50 Z" fill="url(#hGrad)" opacity="0.6"/>
+      <path d="M 36 26 L 36 74 C 36 76 43 76 43 74 L 43 51 L 54 51 C 65 51 65 26 54 26 Z M 43 33 L 53 33 C 58 33 58 44 53 44 L 43 44 Z" fill="url(#hGrad)"/>
     </svg>
     <div>
       <div class="app-title">PixiMax Pro</div>
@@ -288,7 +305,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
     </div>
   </div>
   <div class="header-actions">
-    <button class="btn-signin" id="btnAuth" onclick="openAuthModal()">🔑 تسجيل الدخول</button>
+    <div id="exportCounterBadge" class="export-badge">مجاني: 3/3</div>
+    <button class="btn-signin" id="btnAuth" onclick="openAuthModal()">🔑 دخول</button>
     <a href="https://whop.com/whacka/piximax-pro-pass/" target="_blank" class="badge-pro" id="btnUpgrade">PRO 4K⚡</a>
   </div>
 </div>
@@ -427,12 +445,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
   </div>
 </div>
 
-<!-- SIGN IN MODAL -->
+<!-- SIGN IN / WHOP PRO MODAL -->
 <div class="modal-backdrop" id="authModal">
   <div class="modal-card">
-    <h3>تسجيل دخول PixiMax Pro</h3>
-    <p>أدخل مفتاح اشتراك Whop Pro Pass لتفعيل المميزات غير المحدودة وإزالة الإعلانات</p>
-    <input type="text" id="inputProKey" placeholder="مثال: WHOP-PRO-88992">
+    <h3>ترقية الاشتراك إلى PixiMax Pro Pass</h3>
+    <p>لقد استنفدت الحد اليومي المجاني (3 للتصدير). قم بالاشتراك للحصول على تصدير غير محدود وبدون إعلانات!</p>
+    <a href="https://whop.com/whacka/piximax-pro-pass/" target="_blank" class="btn-main" style="background: linear-gradient(135deg, #ff9900, #ff5500); text-decoration: none; display: block; margin-bottom: 12px;">شراء Whop Pro Pass ⚡</a>
+    <input type="text" id="inputProKey" placeholder="أدخل رمز تفعيل Whop Pro Pass">
     <button class="btn-main" onclick="verifyProAuth()">تفعيل الاشتراك Pro ✨</button>
     <button class="btn-main" style="background:transparent; border:1px solid var(--border-color); margin-top:8px;" onclick="closeAuthModal()">إلغاء</button>
   </div>
@@ -446,19 +465,73 @@ let isProUser = localStorage.getItem('piximax_pro_auth') === 'true';
 let origObjImg = null, origBgImg = null, origFaceImg = null, origWMImg = null, origEnhanceImg = null;
 let currentEnhanceRatio = 'original';
 
-// Check Pro auth state on load
+function getTodayString() {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+}
+
+function getDailyExports() {
+  const savedDate = localStorage.getItem('piximax_export_date');
+  const today = getTodayString();
+  if (savedDate !== today) {
+    localStorage.setItem('piximax_export_date', today);
+    localStorage.setItem('piximax_export_count', '0');
+    return 0;
+  }
+  return parseInt(localStorage.getItem('piximax_export_count') || '0', 10);
+}
+
+function updateExportCounterUI() {
+  const badge = document.getElementById('exportCounterBadge');
+  if (!badge) return;
+  if (isProUser) {
+    badge.innerText = 'غير محدود 👑';
+    badge.style.borderColor = 'var(--gold-pro)';
+    badge.style.color = 'var(--gold-pro)';
+  } else {
+    const used = getDailyExports();
+    const remaining = Math.max(0, 3 - used);
+    badge.innerText = `متبقي: ${remaining}/3`;
+    badge.style.borderColor = remaining > 0 ? 'var(--accent-cyan)' : '#ff4444';
+    badge.style.color = remaining > 0 ? 'var(--accent-cyan)' : '#ff4444';
+  }
+}
+
+function checkAndProcessExport(callback) {
+  if (isProUser) {
+    callback();
+    return;
+  }
+  const used = getDailyExports();
+  if (used >= 3) {
+    openAuthModal();
+    return;
+  }
+
+  // Increment count
+  localStorage.setItem('piximax_export_count', (used + 1).toString());
+  updateExportCounterUI();
+
+  // Trigger interstitial ad for free users
+  triggerStartAd();
+
+  // Execute actual export callback
+  callback();
+}
+
 function initAuthState() {
   if (isProUser) {
-    document.getElementById('btnAuth').innerText = 'PRO 👑 مفعّل';
+    document.getElementById('btnAuth').innerText = 'PRO 👑';
     document.getElementById('btnAuth').classList.add('authenticated');
     const banner = document.getElementById('startioBanner');
     if (banner) banner.style.display = 'none';
   }
+  updateExportCounterUI();
 }
 window.addEventListener('DOMContentLoaded', initAuthState);
 
 function triggerStartAd() {
-  if (isProUser) return; // Hide ads for Pro members
+  if (isProUser) return;
   try {
     if (window.startapp && typeof startapp.showAd === 'function') {
       startapp.showAd();
@@ -468,7 +541,7 @@ function triggerStartAd() {
       window.Android.showAd();
     }
   } catch (e) {
-    console.log('Ad call', e);
+    console.log('Ad call error', e);
   }
 }
 
@@ -485,7 +558,7 @@ function verifyProAuth() {
     localStorage.setItem('piximax_pro_auth', 'true');
     initAuthState();
     closeAuthModal();
-    alert('تم تفعيل اشتراك Whop Pro بنجاح! ✨ تم إيقاف كافة الإعلانات.');
+    alert('تم تفعيل اشتراك Whop Pro بنجاح! ✨ تم إيقاف كافة الإعلانات وإتاحة التصدير غير المحدود.');
   } else {
     alert('يرجى إدخال رمز Whop Pro Pass الصحيح.');
   }
@@ -496,6 +569,96 @@ function switchTab(tabId, btn) {
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
   btn.classList.add('active');
+}
+
+/* AI 4-BOUNDARY SPATIAL PATCH INTERPOLATION */
+function inpaintMaskArea(canvas, mask) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const rect = mask.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+
+  const scaleX = canvas.width / canvasRect.width;
+  const scaleY = canvas.height / canvasRect.height;
+
+  const maskX = Math.round((rect.left - canvasRect.left) * scaleX);
+  const maskY = Math.round((rect.top - canvasRect.top) * scaleY);
+  const maskW = Math.round(rect.width * scaleX);
+  const maskH = Math.round(rect.height * scaleY);
+
+  if (maskW <= 0 || maskH <= 0) return;
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+
+  const topY = Math.max(0, maskY - 1);
+  const bottomY = Math.min(canvas.height - 1, maskY + maskH);
+  const leftX = Math.max(0, maskX - 1);
+  const rightX = Math.min(canvas.width - 1, maskX + maskW);
+
+  const patch = new Uint8ClampedArray(maskW * maskH * 4);
+
+  for (let y = maskY; y < maskY + maskH; y++) {
+    const distTop = y - maskY + 1;
+    const distBottom = maskY + maskH - y;
+    const wT = 1 / (distTop * distTop);
+    const wB = 1 / (distBottom * distBottom);
+
+    for (let x = maskX; x < maskX + maskW; x++) {
+      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
+      const distLeft = x - maskX + 1;
+      const distRight = maskX + maskW - x;
+      const wL = 1 / (distLeft * distLeft);
+      const wR = 1 / (distRight * distRight);
+
+      const totalWeight = wT + wB + wL + wR;
+
+      const topIdx = (topY * canvas.width + x) * 4;
+      const bottomIdx = (bottomY * canvas.width + x) * 4;
+      const leftIdx = (y * canvas.width + leftX) * 4;
+      const rightIdx = (y * canvas.width + rightX) * 4;
+
+      const r = (data[topIdx] * wT + data[bottomIdx] * wB + data[leftIdx] * wL + data[rightIdx] * wR) / totalWeight;
+      const g = (data[topIdx+1] * wT + data[bottomIdx+1] * wB + data[leftIdx+1] * wL + data[rightIdx+1] * wR) / totalWeight;
+      const b = (data[topIdx+2] * wT + data[bottomIdx+2] * wB + data[leftIdx+2] * wL + data[rightIdx+2] * wR) / totalWeight;
+
+      const patchIdx = ((y - maskY) * maskW + (x - maskX)) * 4;
+      patch[patchIdx] = r;
+      patch[patchIdx+1] = g;
+      patch[patchIdx+2] = b;
+      patch[patchIdx+3] = 255;
+    }
+  }
+
+  // Smooth local patch interior to eliminate seams
+  for (let y = maskY; y < maskY + maskH; y++) {
+    for (let x = maskX; x < maskX + maskW; x++) {
+      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
+      const ly = y - maskY;
+      const lx = x - maskX;
+      let sumR = 0, sumG = 0, sumB = 0, count = 0;
+
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const ny = ly + dy;
+          const nx = lx + dx;
+          if (nx >= 0 && nx < maskW && ny >= 0 && ny < maskH) {
+            const pIdx = (ny * maskW + nx) * 4;
+            sumR += patch[pIdx];
+            sumG += patch[pIdx+1];
+            sumB += patch[pIdx+2];
+            count++;
+          }
+        }
+      }
+
+      const idx = (y * canvas.width + x) * 4;
+      data[idx] = sumR / count;
+      data[idx+1] = sumG / count;
+      data[idx+2] = sumB / count;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
 }
 
 /* 1. OBJECT REMOVER */
@@ -537,47 +700,20 @@ function resizeObjMask() {
 function eraseSelectedObject() {
   const canvas = document.getElementById('canvasObj');
   if (!canvas.width) return;
-  triggerStartAd();
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const mask = document.getElementById('maskObj');
-  const rect = mask.getBoundingClientRect();
-  const canvasRect = canvas.getBoundingClientRect();
-
-  const scaleX = canvas.width / canvasRect.width;
-  const scaleY = canvas.height / canvasRect.height;
-
-  const maskX = Math.round((rect.left - canvasRect.left) * scaleX);
-  const maskY = Math.round((rect.top - canvasRect.top) * scaleY);
-  const maskW = Math.round(rect.width * scaleX);
-  const maskH = Math.round(rect.height * scaleY);
-
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imgData.data;
-
-  // Content-aware patch synthesis boundary interpolation
-  for (let y = maskY; y < maskY + maskH; y++) {
-    for (let x = maskX; x < maskX + maskW; x++) {
-      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
-      const sampleY = Math.max(0, maskY - 4);
-      const idx = (y * canvas.width + x) * 4;
-      const sampleIdx = (sampleY * canvas.width + x) * 4;
-      data[idx] = data[sampleIdx];
-      data[idx+1] = data[sampleIdx+1];
-      data[idx+2] = data[sampleIdx+2];
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  alert("تم مسح وإزالة العنصر بنجاح! ✨");
+  inpaintMaskArea(canvas, mask);
+  alert("تم مسح وإزالة العنصر الموائم بنجاح! ✨");
 }
 
 function exportObjImage() {
   const canvas = document.getElementById('canvasObj');
   if (!canvas.width) return;
-  triggerStartAd();
-  const link = document.createElement('a');
-  link.download = 'PixiMax_ObjectRemoved.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  checkAndProcessExport(() => {
+    const link = document.createElement('a');
+    link.download = 'PixiMax_ObjectRemoved.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
 }
 
 /* 2. BG REMOVAL */
@@ -620,11 +756,12 @@ function updateBgRemoval() {
 function exportBgImage() {
   const canvas = document.getElementById('canvasBg');
   if (!canvas.width) return;
-  triggerStartAd();
-  const link = document.createElement('a');
-  link.download = 'PixiMax_Transparent.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  checkAndProcessExport(() => {
+    const link = document.createElement('a');
+    link.download = 'PixiMax_Transparent.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
 }
 
 /* 3. AI FACE RETOUCH */
@@ -644,8 +781,8 @@ function applyFaceRetouch() {
   if (!origFaceImg) return;
   const canvas = document.getElementById('canvasFace');
   const ctx = canvas.getContext('2d');
-  const smooth = document.getElementById('sliderSmooth').value;
-  const clarity = document.getElementById('sliderClarity').value;
+  const smooth = parseInt(document.getElementById('sliderSmooth').value);
+  const clarity = parseInt(document.getElementById('sliderClarity').value);
 
   document.getElementById('valSmooth').innerText = smooth + '%';
   document.getElementById('valClarity').innerText = clarity + '%';
@@ -656,14 +793,14 @@ function applyFaceRetouch() {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  const contrastVal = 100 + (clarity * 0.2);
-  const blurVal = (smooth * 0.015).toFixed(1);
-  ctx.filter = `contrast(${contrastVal}%) brightness(102%) blur(${blurVal}px)`;
+  // Base layer: skin smoothing blur
+  const blurVal = (smooth * 0.08).toFixed(1);
+  ctx.filter = `brightness(102%) blur(${blurVal}px)`;
   ctx.drawImage(origFaceImg, 0, 0);
 
-  // Overlay original fine details softly
-  ctx.filter = `contrast(${100 + parseFloat(clarity)}%) brightness(101%)`;
-  ctx.globalAlpha = 0.35;
+  // Overlay layer: crisp facial features and clarity
+  ctx.filter = `contrast(${100 + clarity * 0.4}%) brightness(101%)`;
+  ctx.globalAlpha = Math.max(0.2, 1.0 - (smooth * 0.007));
   ctx.drawImage(origFaceImg, 0, 0);
   ctx.globalAlpha = 1.0;
 
@@ -673,11 +810,12 @@ function applyFaceRetouch() {
 function exportFaceImage() {
   const canvas = document.getElementById('canvasFace');
   if (!canvas.width) return;
-  triggerStartAd();
-  const link = document.createElement('a');
-  link.download = 'PixiMax_Retouched.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  checkAndProcessExport(() => {
+    const link = document.createElement('a');
+    link.download = 'PixiMax_Retouched.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
 }
 
 /* 4. WATERMARK ERASER */
@@ -719,46 +857,20 @@ function resizeWMMask() {
 function eraseWatermarkArea() {
   const canvas = document.getElementById('canvasWM');
   if (!canvas.width) return;
-  triggerStartAd();
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const mask = document.getElementById('maskWM');
-  const rect = mask.getBoundingClientRect();
-  const canvasRect = canvas.getBoundingClientRect();
-
-  const scaleX = canvas.width / canvasRect.width;
-  const scaleY = canvas.height / canvasRect.height;
-
-  const maskX = Math.round((rect.left - canvasRect.left) * scaleX);
-  const maskY = Math.round((rect.top - canvasRect.top) * scaleY);
-  const maskW = Math.round(rect.width * scaleX);
-  const maskH = Math.round(rect.height * scaleY);
-
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imgData.data;
-
-  for (let y = maskY; y < maskY + maskH; y++) {
-    for (let x = maskX; x < maskX + maskW; x++) {
-      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
-      const sampleY = Math.max(0, maskY - 4);
-      const idx = (y * canvas.width + x) * 4;
-      const sampleIdx = (sampleY * canvas.width + x) * 4;
-      data[idx] = data[sampleIdx];
-      data[idx+1] = data[sampleIdx+1];
-      data[idx+2] = data[sampleIdx+2];
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
+  inpaintMaskArea(canvas, mask);
   alert("تم مسح العلامة المائية بنجاح! ✨");
 }
 
 function exportWMImage() {
   const canvas = document.getElementById('canvasWM');
   if (!canvas.width) return;
-  triggerStartAd();
-  const link = document.createElement('a');
-  link.download = 'PixiMax_Cleaned.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  checkAndProcessExport(() => {
+    const link = document.createElement('a');
+    link.download = 'PixiMax_Cleaned.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
 }
 
 /* 5. ENHANCE / UPSCALE */
@@ -821,23 +933,12 @@ function applyEnhanceFilters() {
 function exportEnhanceImage() {
   const canvas = document.getElementById('canvasEnhance');
   if (!canvas.width) return;
-  triggerStartAd();
-  const link = document.createElement('a');
-  link.download = 'PixiMax_4K.png';
-  link.href = canvas.toDataURL('image/png', 1.0);
-  link.click();
-}
-
-/* REAL-ESRGAN & INPAINTING BACKEND STUBS */
-async function processRealESRGAN(imageBlob) {
-  // Hook for backend AI upscaling service
-  console.log('Real-ESRGAN hook invoked for blob:', imageBlob);
-  return imageBlob;
-}
-async function processInpaintingBackend(imageBlob, maskBlob) {
-  // Hook for backend Inpainting service
-  console.log('Inpainting hook invoked for blob:', imageBlob, maskBlob);
-  return imageBlob;
+  checkAndProcessExport(() => {
+    const link = document.createElement('a');
+    link.download = 'PixiMax_4K.png';
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+  });
 }
 
 /* DRAGGABLE MASK LOGIC FOR OBJECT & WATERMARK REMOVERS */

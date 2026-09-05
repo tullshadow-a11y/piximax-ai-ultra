@@ -27,7 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
 import com.novacore.piximaxaiultra.ui.theme.*
+import com.novacore.piximaxaiultra.utils.ExportManager
 import com.novacore.piximaxaiultra.utils.ImageProcessor
 import com.novacore.piximaxaiultra.utils.ImageUtils
 import com.startapp.sdk.adsbase.StartAppAd
@@ -197,9 +199,13 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
         Button(
             onClick = {
                 val outBmp = processedBitmap ?: return@Button
-                if (!isProUser) {
-                    StartAppAd.showAd(context)
+                if (!ExportManager.canExport(context, isProUser)) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/whacka/piximax-pro-pass/"))
+                    context.startActivity(intent)
+                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
+                    return@Button
                 }
+                ExportManager.recordExportAndShowAd(context, isProUser)
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Retouched_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
                     Toast.makeText(context, "تم الحفظ! ✨", Toast.LENGTH_LONG).show()

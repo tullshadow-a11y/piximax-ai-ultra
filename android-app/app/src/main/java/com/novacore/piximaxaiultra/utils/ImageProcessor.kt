@@ -91,14 +91,12 @@ object ImageProcessor {
         val outputPixels = IntArray(width * height)
         src.getPixels(pixels, 0, width, 0, 0, width, height)
 
-        // Calculate conservative kernel strength based on percentage (100% to 150%)
         val k = ((sharpnessPercent - 100f) / 100f) * 0.15f
         if (k <= 0f) return src
 
         val centerWeight = 1f + 4f * k
         val surroundWeight = -k
 
-        // Copy edge pixels directly
         for (x in 0 until width) {
             outputPixels[x] = pixels[x]
             outputPixels[(height - 1) * width + x] = pixels[(height - 1) * width + x]
@@ -108,7 +106,6 @@ object ImageProcessor {
             outputPixels[y * width + (width - 1)] = pixels[y * width + (width - 1)]
         }
 
-        // Apply 3x3 kernel
         for (y in 1 until height - 1) {
             for (x in 1 until width - 1) {
                 val idx = y * width + x
@@ -169,7 +166,7 @@ object ImageProcessor {
     }
 
     /**
-     * Smooths skin tones and sharpens facial detail.
+     * Applies skin tone smoothing (surface blur on skin colors) while keeping facial clarity.
      */
     fun faceRetouch(
         src: Bitmap,
@@ -178,26 +175,69 @@ object ImageProcessor {
     ): Bitmap {
         val width = src.width
         val height = src.height
-        val tempBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(tempBitmap)
+        val pixels = IntArray(width * height)
+        val outputPixels = IntArray(width * height)
+        src.getPixels(pixels, 0, width, 0, 0, width, height)
 
-        val paint = Paint().apply {
-            isAntiAlias = true
-            isFilterBitmap = true
+        val smoothRadius = (smoothPercent * 0.05f).toInt().coerceIn(1, 8)
+        val threshold = 35.0f
+
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val idx = y * width + x
+                val centerP = pixels[idx]
+                val cr = (centerP shr 16) and 0xFF
+                val cg = (centerP shr 8) and 0xFF
+                val cb = centerP and 0xFF
+
+                val isSkin = cr > 45 && cg > 25 && cb > 15 &&
+                             cr > cg && cr > cb && Math.abs(cr - cg) > 10
+
+                if (isSkin && smoothRadius > 0) {
+                    var sumR = 0f
+                    var sumG = 0f
+                    var sumB = 0f
+                    var weightSum = 0f
+
+                    for (dy in -smoothRadius..smoothRadius) {
+                        val ny = (y + dy).coerceIn(0, height - 1)
+                        for (dx in -smoothRadius..smoothRadius) {
+                            val nx = (x + dx).coerceIn(0, width - 1)
+                            val p = pixels[ny * width + nx]
+                            val r = (p shr 16) and 0xFF
+                            val g = (p shr 8) and 0xFF
+                            val b = p and 0xFF
+
+                            val colorDiff = Math.sqrt(((r - cr) * (r - cr) + (g - cg) * (g - cg) + (b - cb) * (b - cb)).toDouble()).toFloat()
+                            if (colorDiff < threshold) {
+                                val weight = 1.0f - (colorDiff / threshold)
+                                sumR += r * weight
+                                sumG += g * weight
+                                sumB += b * weight
+                                weightSum += weight
+                            }
+                        }
+                    }
+
+                    if (weightSum > 0f) {
+                        val finalR = (sumR / weightSum).toInt().coerceIn(0, 255)
+                        val finalG = (sumG / weightSum).toInt().coerceIn(0, 255)
+                        val finalB = (sumB / weightSum).toInt().coerceIn(0, 255)
+                        val a = centerP and 0xFF000000.toInt()
+                        outputPixels[idx] = a or (finalR shl 16) or (finalG shl 8) or finalB
+                    } else {
+                        outputPixels[idx] = centerP
+                    }
+                } else {
+                    outputPixels[idx] = centerP
+                }
+            }
         }
 
-        val contrastScale = 1.0f + (clarityPercent / 300f)
-        val colorMatrix = ColorMatrix(floatArrayOf(
-            contrastScale, 0f, 0f, 0f, 0f,
-            0f, contrastScale, 0f, 0f, 0f,
-            0f, 0f, contrastScale, 0f, 0f,
-            0f, 0f, 0f, 1f, 0f
-        ))
-        paint.colorFilter = ColorMatrixColorFilter(colorMatrix)
-        canvas.drawBitmap(src, 0f, 0f, paint)
+        val smoothedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        smoothedBitmap.setPixels(outputPixels, 0, width, 0, 0, width, height)
 
-        val sharpenStrength = 100f + (clarityPercent * 0.5f)
-        return sharpen(tempBitmap, sharpenStrength)
+        return enhance(smoothedBitmap, "original", 100f + (clarityPercent * 0.3f), 100f + (clarityPercent * 0.15f))
     }
 
     /**
@@ -251,7 +291,8 @@ object ImageProcessor {
     }
 
     /**
-     * Smudges out watermark region using colors sampled above it.
+     * Erases watermark or unwanted objects using 4-boundary spatial interpolation
+     * and edge smoothing to eliminate cloned box artifacts.
      */
     fun eraseWatermark(
         src: Bitmap,
@@ -273,13 +314,77 @@ object ImageProcessor {
         val pixels = IntArray(width * height)
         src.getPixels(pixels, 0, width, 0, 0, width, height)
 
-        val sampleY = (maskY - 3).coerceAtLeast(0)
+        val topY = (maskY - 1).coerceAtLeast(0)
+        val bottomY = (maskY + maskH).coerceAtMost(height - 1)
+        val leftX = (maskX - 1).coerceAtLeast(0)
+        val rightX = (maskX + maskW).coerceAtMost(width - 1)
+
+        val tempPatch = IntArray(maskW * maskH)
+
+        for (y in maskY until (maskY + maskH)) {
+            val distTop = (y - maskY + 1).toFloat()
+            val distBottom = (maskY + maskH - y).toFloat()
+            val wT = 1f / (distTop * distTop)
+            val wB = 1f / (distBottom * distBottom)
+
+            for (x in maskX until (maskX + maskW)) {
+                val distLeft = (x - maskX + 1).toFloat()
+                val distRight = (maskX + maskW - x).toFloat()
+                val wL = 1f / (distLeft * distLeft)
+                val wR = 1f / (distRight * distRight)
+
+                val totalWeight = wT + wB + wL + wR
+
+                val pT = pixels[topY * width + x]
+                val pB = pixels[bottomY * width + x]
+                val pL = pixels[y * width + leftX]
+                val pR = pixels[y * width + rightX]
+
+                val r = (((pT shr 16) and 0xFF) * wT + ((pB shr 16) and 0xFF) * wB +
+                         ((pL shr 16) and 0xFF) * wL + ((pR shr 16) and 0xFF) * wR) / totalWeight
+                val g = (((pT shr 8) and 0xFF) * wT + ((pB shr 8) and 0xFF) * wB +
+                         ((pL shr 8) and 0xFF) * wL + ((pR shr 8) and 0xFF) * wR) / totalWeight
+                val b = ((pT and 0xFF) * wT + (pB and 0xFF) * wB +
+                         (pL and 0xFF) * wL + (pR and 0xFF) * wR) / totalWeight
+                val a = (pT and 0xFF000000.toInt())
+
+                val localIdx = (y - maskY) * maskW + (x - maskX)
+                tempPatch[localIdx] = a or (r.toInt().coerceIn(0, 255) shl 16) or
+                        (g.toInt().coerceIn(0, 255) shl 8) or b.toInt().coerceIn(0, 255)
+            }
+        }
 
         for (y in maskY until (maskY + maskH)) {
             for (x in maskX until (maskX + maskW)) {
+                val ly = y - maskY
+                val lx = x - maskX
+
+                var sumR = 0f
+                var sumG = 0f
+                var sumB = 0f
+                var count = 0
+
+                for (dy in -1..1) {
+                    for (dx in -1..1) {
+                        val ny = ly + dy
+                        val nx = lx + dx
+                        if (nx in 0 until maskW && ny in 0 until maskH) {
+                            val p = tempPatch[ny * maskW + nx]
+                            sumR += (p shr 16) and 0xFF
+                            sumG += (p shr 8) and 0xFF
+                            sumB += p and 0xFF
+                            count++
+                        }
+                    }
+                }
+
                 val targetIdx = y * width + x
-                val sampleIdx = sampleY * width + x
-                pixels[targetIdx] = pixels[sampleIdx]
+                val alpha = pixels[targetIdx] and 0xFF000000.toInt()
+                val finalR = (sumR / count).toInt().coerceIn(0, 255)
+                val finalG = (sumG / count).toInt().coerceIn(0, 255)
+                val finalB = (sumB / count).toInt().coerceIn(0, 255)
+
+                pixels[targetIdx] = alpha or (finalR shl 16) or (finalG shl 8) or finalB
             }
         }
 
