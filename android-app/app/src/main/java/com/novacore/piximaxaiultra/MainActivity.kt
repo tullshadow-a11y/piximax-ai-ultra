@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.novacore.piximaxaiultra.ui.screens.*
 import com.novacore.piximaxaiultra.ui.theme.*
+import com.novacore.piximaxaiultra.utils.ExportManager
 import com.startapp.sdk.ads.banner.Banner
 
 class MainActivity : ComponentActivity() {
@@ -136,29 +137,47 @@ fun AppHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            // 4-Point AI Sparkle Icon Canvas
+            // Neon Glowing 'P' Aperture Icon Canvas
             Canvas(modifier = Modifier.size(28.dp)) {
                 val center = Offset(size.width / 2f, size.height / 2f)
                 val glowRadius = size.width / 2f
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF00D2FF), Color(0x000088FF)),
+                        colors = listOf(Color(0xFF00D2FF), Color(0x668A2BE2), Color(0x00000000)),
                         center = center,
                         radius = glowRadius
                     )
                 )
 
-                val path = Path().apply {
-                    moveTo(center.x, 2f)
-                    quadraticTo(center.x, center.y, 2f, center.y)
-                    quadraticTo(center.x, center.y, center.x, size.height - 2f)
-                    quadraticTo(center.x, center.y, size.width - 2f, center.y)
-                    quadraticTo(center.x, center.y, center.x, 2f)
+                // Outer Ring
+                drawCircle(
+                    brush = Brush.linearGradient(listOf(Color(0xFF00D2FF), Color(0xFF8A2BE2))),
+                    radius = size.width * 0.42f,
+                    center = center,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f)
+                )
+
+                // Neon 'P' Symbol
+                val pPath = Path().apply {
+                    val w = size.width
+                    val h = size.height
+                    moveTo(w * 0.36f, h * 0.26f)
+                    lineTo(w * 0.36f, h * 0.74f)
+                    lineTo(w * 0.43f, h * 0.74f)
+                    lineTo(w * 0.43f, h * 0.51f)
+                    lineTo(w * 0.54f, h * 0.51f)
+                    cubicTo(w * 0.65f, h * 0.51f, w * 0.65f, h * 0.26f, w * 0.54f, h * 0.26f)
+                    close()
+
+                    moveTo(w * 0.43f, h * 0.33f)
+                    lineTo(w * 0.53f, h * 0.33f)
+                    cubicTo(w * 0.58f, h * 0.33f, w * 0.58f, h * 0.44f, w * 0.53f, h * 0.44f)
+                    lineTo(w * 0.43f, h * 0.44f)
                     close()
                 }
                 drawPath(
-                    path = path,
-                    brush = Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF8A2BE2)))
+                    path = pPath,
+                    brush = Brush.linearGradient(listOf(Color(0xFF00D2FF), Color(0xFF8A2BE2)))
                 )
             }
 
@@ -178,6 +197,22 @@ fun AppHeader(
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            val context = LocalContext.current
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0x2600D2FF))
+                    .border(1.dp, AccentCyan, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = ExportManager.getRemainingExportsText(context, isProUser),
+                    color = AccentCyan,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))

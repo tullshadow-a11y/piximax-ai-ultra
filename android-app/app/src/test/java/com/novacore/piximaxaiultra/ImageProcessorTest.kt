@@ -64,8 +64,10 @@ class ImageProcessorTest {
     @Test
     fun testEraseWatermarkAndRemoveObject() {
         val bitmap = Bitmap.createBitmap(20, 20, Bitmap.Config.ARGB_8888)
-        for (x in 0 until 20) {
-            bitmap.setPixel(x, 2, android.graphics.Color.RED)
+        for (y in 0 until 20) {
+            for (x in 0 until 20) {
+                bitmap.setPixel(x, y, android.graphics.Color.RED)
+            }
         }
         for (y in 5 until 10) {
             for (x in 5 until 15) {
@@ -81,6 +83,7 @@ class ImageProcessorTest {
             heightPercent = 0.25f
         )
 
+        assertNotNull(erasedBitmap)
         assertEquals(android.graphics.Color.RED, erasedBitmap.getPixel(10, 7))
 
         val objectRemovedBitmap = ImageProcessor.removeObject(
@@ -91,6 +94,7 @@ class ImageProcessorTest {
             heightPercent = 0.25f
         )
         assertNotNull(objectRemovedBitmap)
+        assertEquals(android.graphics.Color.RED, objectRemovedBitmap.getPixel(10, 7))
     }
 
     @Test
