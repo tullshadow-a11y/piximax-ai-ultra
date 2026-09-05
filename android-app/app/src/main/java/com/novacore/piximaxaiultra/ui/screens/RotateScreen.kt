@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.novacore.piximaxaiultra.ui.theme.*
+import com.novacore.piximaxaiultra.utils.ExportManager
 import com.novacore.piximaxaiultra.utils.ImageProcessor
 import com.novacore.piximaxaiultra.utils.ImageUtils
 import com.startapp.sdk.adsbase.StartAppAd
@@ -37,7 +38,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun RotateScreen() {
+fun RotateScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -204,8 +205,13 @@ fun RotateScreen() {
                     return@Button
                 }
 
-                // Show Start.io Interstitial Ad on Save/Export
-                StartAppAd.showAd(context)
+                if (!ExportManager.canExport(context, isProUser)) {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("https://whop.com/whacka/piximax-pro-pass/"))
+                    context.startActivity(intent)
+                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
+                    return@Button
+                }
+                ExportManager.recordExportAndShowAd(context, isProUser)
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Edited_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
