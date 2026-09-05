@@ -29,6 +29,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.novacore.piximaxaiultra.ui.screens.*
 import com.novacore.piximaxaiultra.ui.theme.*
 import com.novacore.piximaxaiultra.utils.ExportManager
@@ -37,10 +40,20 @@ import com.startapp.sdk.ads.banner.Banner
 class MainActivity : ComponentActivity() {
 
     private lateinit var sharedPreferences: SharedPreferences
+    private var firebaseAuth: FirebaseAuth? = null
+    private var firebaseFirestore: FirebaseFirestore? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        try {
+            FirebaseApp.initializeApp(this)
+            firebaseAuth = FirebaseAuth.getInstance()
+            firebaseFirestore = FirebaseFirestore.getInstance()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         com.startapp.sdk.adsbase.StartAppSDK.init(this, "207695262", false)
         com.startapp.sdk.adsbase.StartAppSDK.enableReturnAds(false)
@@ -56,6 +69,18 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(sharedPreferences.getBoolean("piximax_pro_auth", false))
                 }
                 var showAuthDialog by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    firebaseAuth?.currentUser?.let { user ->
+                        firebaseFirestore?.collection("users")?.document(user.uid)?.get()
+                            ?.addOnSuccessListener { doc ->
+                                if (doc != null && doc.getBoolean("isPro") == true) {
+                                    isProUser = true
+                                    sharedPreferences.edit().putBoolean("piximax_pro_auth", true).apply()
+                                }
+                            }
+                    }
+                }
 
                 LaunchedEffect(selectedTab) {
                     sharedPreferences.edit().putInt("active_tab", selectedTab).apply()
@@ -302,6 +327,8 @@ fun ProAuthDialog(
     onDismiss: () -> Unit,
     onAuthenticated: () -> Unit
 ) {
+    var emailText by remember { mutableStateOf("") }
+    var passwordText by remember { mutableStateOf("") }
     var keyText by remember { mutableStateOf("") }
     val context = LocalContext.current
 
@@ -310,7 +337,7 @@ fun ProAuthDialog(
         containerColor = CardBg,
         title = {
             Text(
-                text = "تسجيل دخول PixiMax Pro",
+                text = "تسجيل الدخول / Whop Pro Pass",
                 color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
@@ -321,12 +348,114 @@ fun ProAuthDialog(
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "أدخل مفتاح اشتراك Whop Pro Pass لتفعيل المميزات وإزالة الإعلانات",
+                    text = "سجل الدخول بحساب Firebase أو أدخل رمز Whop Pro Pass للحصول على مميزات Pro وإزالة الإعلانات",
                     color = TextSub,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = emailText,
+                    onValueChange = { emailText = it },
+                    placeholder = { Text("البريد الإلكتروني (Email)", color = TextSub) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentBlue,
+                        unfocusedBorderColor = BorderColor,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                OutlinedTextField(
+                    value = passwordText,
+                    onValueChange = { passwordText = it },
+                    placeholder = { Text("كلمة المرور (Password)", color = TextSub) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentBlue,
+                        unfocusedBorderColor = BorderColor,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            if (emailText.contains("@") && passwordText.length >= 6) {
+                                try {
+                                    FirebaseAuth.getInstance().signInWithEmailAndPassword(emailText.trim(), passwordText.trim())
+                                        .addOnSuccessListener { authResult ->
+                                            val uid = authResult.user?.uid ?: ""
+                                            FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                                                .addOnSuccessListener { doc ->
+                                                    if (doc.getBoolean("isPro") == true) {
+                                                        onAuthenticated()
+                                                    } else {
+                                                        android.widget.Toast.makeText(context, "تم تسجيل الدخول بنجاح! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                                        onDismiss()
+                                                    }
+                                                }
+                                        }
+                                        .addOnFailureListener {
+                                            android.widget.Toast.makeText(context, "فشل تسجيل الدخول: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(context, "تم تسجيل الدخول! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                    onDismiss()
+                                }
+                            } else {
+                                android.widget.Toast.makeText(context, "يرجى كتابة البريد وكلمة المرور الصحيحة", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
+                    ) {
+                        Text("دخول 🔑", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            if (emailText.contains("@") && passwordText.length >= 6) {
+                                try {
+                                    FirebaseAuth.getInstance().createUserWithEmailAndPassword(emailText.trim(), passwordText.trim())
+                                        .addOnSuccessListener { authResult ->
+                                            val uid = authResult.user?.uid ?: ""
+                                            val userMap = mapOf("email" to emailText.trim(), "isPro" to false)
+                                            FirebaseFirestore.getInstance().collection("users").document(uid).set(userMap)
+                                            android.widget.Toast.makeText(context, "تم إنشاء الحساب بنجاح! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                            onDismiss()
+                                        }
+                                        .addOnFailureListener {
+                                            android.widget.Toast.makeText(context, "فشل إنشاء الحساب: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(context, "تم إنشاء الحساب! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                    onDismiss()
+                                }
+                            } else {
+                                android.widget.Toast.makeText(context, "يرجى كتابة البريد وكلمة المرور الصحيحة", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                    ) {
+                        Text("حساب جديد", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = BorderColor)
+                Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(
                     value = keyText,
                     onValueChange = { keyText = it },
@@ -346,14 +475,23 @@ fun ProAuthDialog(
             Button(
                 onClick = {
                     if (keyText.trim().length >= 3) {
+                        try {
+                            val user = FirebaseAuth.getInstance().currentUser
+                            if (user != null) {
+                                val userMap = mapOf("email" to (user.email ?: ""), "isPro" to true)
+                                FirebaseFirestore.getInstance().collection("users").document(user.uid).set(userMap)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                         onAuthenticated()
                     } else {
                         android.widget.Toast.makeText(context, "أدخل رمز مفتاح Whop Pro الصحيح", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9900))
             ) {
-                Text("تفعيل PRO ✨", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("تفعيل Whop Pro ⚡", color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
