@@ -1,0 +1,16 @@
+{
+  "name": "PixiMax Pro AI Ultra",
+  "short_name": "PixiMax Pro",
+  "description": "Professional AI Image Processing Application - 4K Enhancement, Object Removal, Background Removal, AI Face Retouch, and Watermark Removal.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0088ff",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

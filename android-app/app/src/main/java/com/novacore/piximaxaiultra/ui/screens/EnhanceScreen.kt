@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun EnhanceScreen() {
+fun EnhanceScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -46,8 +46,8 @@ fun EnhanceScreen() {
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     var selectedRatio by remember { mutableStateOf("original") }
-    var sharpness by remember { mutableStateOf(140f) }
-    var contrast by remember { mutableStateOf(120f) }
+    var sharpness by remember { mutableStateOf(105f) }
+    var contrast by remember { mutableStateOf(102f) }
     var isProcessing by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -66,7 +66,6 @@ fun EnhanceScreen() {
         }
     }
 
-    // Trigger processing whenever parameters change
     LaunchedEffect(originalBitmap, selectedRatio, sharpness, contrast) {
         val original = originalBitmap ?: return@LaunchedEffect
         isProcessing = true
@@ -86,7 +85,6 @@ fun EnhanceScreen() {
             .padding(14.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Upload Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,7 +97,7 @@ fun EnhanceScreen() {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "📁 اضغط هنا لاختيار صورة لرفع الجودة",
+                    text = "🔍 اضغط هنا لاختيار صورة لرفع الجودة (Real-ESRGAN)",
                     color = AccentBlue,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -110,7 +108,6 @@ fun EnhanceScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Image Preview Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -150,7 +147,6 @@ fun EnhanceScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Dimensions badge
         processedBitmap?.let { bmp ->
             Text(
                 text = "أبعاد الملف النهائي: ${bmp.width} × ${bmp.height} px",
@@ -163,7 +159,6 @@ fun EnhanceScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Ratios Grid
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -200,7 +195,6 @@ fun EnhanceScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Sliders
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -209,18 +203,17 @@ fun EnhanceScreen() {
                 .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
                 .padding(14.dp)
         ) {
-            // Sharpness Slider
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "الحدة (Sharpness)", color = TextSub, fontSize = 11.sp)
+                Text(text = "الحدة (Sharpness) - متوازن", color = TextSub, fontSize = 11.sp)
                 Text(text = "${sharpness.toInt()}%", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
                 value = sharpness,
                 onValueChange = { sharpness = it },
-                valueRange = 100f..200f,
+                valueRange = 100f..150f,
                 colors = SliderDefaults.colors(
                     thumbColor = AccentBlue,
                     activeTrackColor = AccentBlue,
@@ -230,18 +223,17 @@ fun EnhanceScreen() {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Contrast Slider
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "التباين (Contrast)", color = TextSub, fontSize = 11.sp)
+                Text(text = "التباين (Contrast) - متوازن", color = TextSub, fontSize = 11.sp)
                 Text(text = "${contrast.toInt()}%", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
                 value = contrast,
                 onValueChange = { contrast = it },
-                valueRange = 100f..180f,
+                valueRange = 100f..140f,
                 colors = SliderDefaults.colors(
                     thumbColor = AccentBlue,
                     activeTrackColor = AccentBlue,
@@ -252,7 +244,6 @@ fun EnhanceScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Export button
         Button(
             onClick = {
                 val outBmp = processedBitmap
@@ -261,8 +252,9 @@ fun EnhanceScreen() {
                     return@Button
                 }
 
-                // Show Start.io Interstitial Ad on Export
-                StartAppAd.showAd(context)
+                if (!isProUser) {
+                    StartAppAd.showAd(context)
+                }
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_4K_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
@@ -274,9 +266,7 @@ fun EnhanceScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Unspecified
-            ),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Unspecified),
             shape = RoundedCornerShape(10.dp),
             contentPadding = PaddingValues(0.dp)
         ) {
