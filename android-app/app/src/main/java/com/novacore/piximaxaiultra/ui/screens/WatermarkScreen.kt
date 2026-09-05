@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun WatermarkScreen() {
+fun WatermarkScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
@@ -54,17 +54,12 @@ fun WatermarkScreen() {
 
     var isProcessing by remember { mutableStateOf(false) }
 
-    // Selection dimensions (in dp, adjustable via sliders)
     var maskWidthDp by remember { mutableStateOf(100f) }
     var maskHeightDp by remember { mutableStateOf(50f) }
 
-    // Absolute screen-pixel coordinates of the selection box relative to container top-left
     var maskOffset by remember { mutableStateOf(Offset(0f, 0f)) }
-
-    // Container size tracking
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
-    // Geometry parameters of the actual drawn image area within container (Fit content scale)
     var drawLeft by remember { mutableStateOf(0f) }
     var drawTop by remember { mutableStateOf(0f) }
     var drawW by remember { mutableStateOf(0f) }
@@ -83,14 +78,11 @@ fun WatermarkScreen() {
                 originalBitmap = bmp
                 processedBitmap = bmp
                 isProcessing = false
-
-                // Reset position to center of screen/container
                 maskOffset = Offset(100f, 100f)
             }
         }
     }
 
-    // Dynamic geometry recalculation whenever containerSize or processedBitmap changes
     LaunchedEffect(containerSize, processedBitmap) {
         val bmp = processedBitmap ?: return@LaunchedEffect
         val containerW = containerSize.width.toFloat()
@@ -112,7 +104,6 @@ fun WatermarkScreen() {
             drawTop = 0f
         }
 
-        // Initially place mask in the center of the actual drawn image
         val maskW = with(density) { maskWidthDp.dp.toPx() }
         val maskH = with(density) { maskHeightDp.dp.toPx() }
         maskOffset = Offset(
@@ -121,7 +112,6 @@ fun WatermarkScreen() {
         )
     }
 
-    // Keep mask strictly constrained within drawn image bounds
     val maskWidthPx = with(density) { maskWidthDp.dp.toPx() }
     val maskHeightPx = with(density) { maskHeightDp.dp.toPx() }
 
@@ -145,7 +135,6 @@ fun WatermarkScreen() {
             .padding(14.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Upload Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,7 +158,6 @@ fun WatermarkScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Draggable Preview Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,7 +179,6 @@ fun WatermarkScreen() {
                         contentScale = ContentScale.Fit
                     )
 
-                    // Selection box with corner visual handles and drag detection
                     Box(
                         modifier = Modifier
                             .offset(
@@ -216,7 +203,6 @@ fun WatermarkScreen() {
                                 }
                             }
                     ) {
-                        // Four custom visual corner handles to represent professional selector
                         Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.TopStart))
                         Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.TopEnd))
                         Box(modifier = Modifier.size(6.dp).background(SuccessGreen).align(Alignment.BottomStart))
@@ -256,7 +242,6 @@ fun WatermarkScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Sliders for Width and Height
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -265,7 +250,6 @@ fun WatermarkScreen() {
                 .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
                 .padding(14.dp)
         ) {
-            // Width Slider
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -286,7 +270,6 @@ fun WatermarkScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Height Slider
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -308,7 +291,6 @@ fun WatermarkScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Smart Erase Button
         Button(
             onClick = {
                 val currentBmp = originalBitmap
@@ -317,10 +299,10 @@ fun WatermarkScreen() {
                     return@Button
                 }
 
-                // Show Start.io Interstitial Ad on Export/Processing
-                StartAppAd.showAd(context)
+                if (!isProUser) {
+                    StartAppAd.showAd(context)
+                }
 
-                // Capture EXACT current coordinates relative to drawn bounds
                 val liveMaskOffset = maskOffset
                 val liveMaskWidthPx = maskWidthPx
                 val liveMaskHeightPx = maskHeightPx
@@ -332,11 +314,9 @@ fun WatermarkScreen() {
                 isProcessing = true
                 coroutineScope.launch {
                     val result = withContext(Dispatchers.Default) {
-                        // Map coordinates relative to the drawn image bounds
                         val touchX = liveMaskOffset.x - liveDrawLeft
                         val touchY = liveMaskOffset.y - liveDrawTop
 
-                        // Scale relative to drawn view width and height
                         val relativeLeft = touchX / liveDrawW
                         val relativeTop = touchY / liveDrawH
                         val relativeW = liveMaskWidthPx / liveDrawW
@@ -352,7 +332,7 @@ fun WatermarkScreen() {
                     }
 
                     processedBitmap = result
-                    originalBitmap = result // support subsequent/chained erasure
+                    originalBitmap = result
                     isProcessing = false
                     Toast.makeText(context, "تم مسح العلامة المائية! ✨", Toast.LENGTH_LONG).show()
                 }
@@ -381,7 +361,6 @@ fun WatermarkScreen() {
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Save Clean Image Button
         Button(
             onClick = {
                 val outBmp = processedBitmap
@@ -390,8 +369,9 @@ fun WatermarkScreen() {
                     return@Button
                 }
 
-                // Show Start.io Interstitial Ad on Export
-                StartAppAd.showAd(context)
+                if (!isProUser) {
+                    StartAppAd.showAd(context)
+                }
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Cleaned_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {

@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun BgRemovalScreen() {
+fun BgRemovalScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -66,7 +66,6 @@ fun BgRemovalScreen() {
         }
     }
 
-    // Trigger processing when tolerance or original image changes
     LaunchedEffect(originalBitmap, tolerance) {
         val original = originalBitmap ?: return@LaunchedEffect
         isProcessing = true
@@ -86,7 +85,6 @@ fun BgRemovalScreen() {
             .padding(14.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Upload Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -110,7 +108,6 @@ fun BgRemovalScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Checkerboard Image Preview Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -119,7 +116,6 @@ fun BgRemovalScreen() {
                 .border(1.dp, BorderColor, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
         ) {
-            // Draw Checkerboard pattern
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val tileSize = 24f
                 val columns = (size.width / tileSize).toInt() + 1
@@ -179,7 +175,6 @@ fun BgRemovalScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Sliders
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -188,7 +183,6 @@ fun BgRemovalScreen() {
                 .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
                 .padding(14.dp)
         ) {
-            // Tolerance Slider
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -210,7 +204,6 @@ fun BgRemovalScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Export button
         Button(
             onClick = {
                 val outBmp = processedBitmap
@@ -219,8 +212,9 @@ fun BgRemovalScreen() {
                     return@Button
                 }
 
-                // Show Start.io Interstitial Ad on Export
-                StartAppAd.showAd(context)
+                if (!isProUser) {
+                    StartAppAd.showAd(context)
+                }
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Transparent_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
@@ -232,9 +226,7 @@ fun BgRemovalScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Unspecified
-            ),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Unspecified),
             shape = RoundedCornerShape(10.dp),
             contentPadding = PaddingValues(0.dp)
         ) {

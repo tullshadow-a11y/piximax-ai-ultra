@@ -11,13 +11,14 @@ object ImageProcessor {
 
     /**
      * Resizes, crops, and processes contrast/brightness on a bitmap.
-     * Matches the Web App's "Enhance" filter logic.
+     * Re-tuned with conservative default values (105% sharpness, 102% contrast)
+     * to prevent harsh text distortion and pixelation.
      */
     fun enhance(
         bitmap: Bitmap,
         ratio: String,
-        sharpnessPercent: Float,
-        contrastPercent: Float
+        sharpnessPercent: Float = 105f,
+        contrastPercent: Float = 102f
     ): Bitmap {
         val originalW = bitmap.width
         val originalH = bitmap.height
@@ -55,10 +56,11 @@ object ImageProcessor {
         val paint = Paint().apply {
             isAntiAlias = true
             isFilterBitmap = true
+            isDither = true
         }
 
         val contrastScale = contrastPercent / 100f
-        val brightnessScale = 1.02f // matches Web App "brightness(102%)"
+        val brightnessScale = 1.01f
         val scale = contrastScale * brightnessScale
         val translate = (0.5f * (1f - contrastScale) * brightnessScale) * 255f
 
@@ -73,7 +75,7 @@ object ImageProcessor {
         // Draw with filter
         canvas.drawBitmap(bitmap, null, RectF(offsetX, offsetY, offsetX + renderW, offsetY + renderH), paint)
 
-        // Now apply sharpening kernel
+        // Now apply conservative sharpening kernel
         return sharpen(tempBitmap, sharpnessPercent)
     }
 
@@ -89,8 +91,8 @@ object ImageProcessor {
         val outputPixels = IntArray(width * height)
         src.getPixels(pixels, 0, width, 0, 0, width, height)
 
-        // Calculate kernel strength based on percentage (100% to 200%)
-        val k = ((sharpnessPercent - 100f) / 100f) * 0.25f
+        // Calculate conservative kernel strength based on percentage (100% to 150%)
+        val k = ((sharpnessPercent - 100f) / 100f) * 0.15f
         if (k <= 0f) return src
 
         val centerWeight = 1f + 4f * k
@@ -111,14 +113,12 @@ object ImageProcessor {
             for (x in 1 until width - 1) {
                 val idx = y * width + x
 
-                // Surrounding pixels
-                val p01 = pixels[idx - width]     // top
-                val p10 = pixels[idx - 1]         // left
-                val p11 = pixels[idx]             // center
-                val p12 = pixels[idx + 1]         // right
-                val p21 = pixels[idx + width]     // bottom
+                val p01 = pixels[idx - width]
+                val p10 = pixels[idx - 1]
+                val p11 = pixels[idx]
+                val p12 = pixels[idx + 1]
+                val p21 = pixels[idx + width]
 
-                // Red
                 val r11 = (p11 shr 16) and 0xFF
                 val rSurround = (((p01 shr 16) and 0xFF) +
                                  ((p10 shr 16) and 0xFF) +
@@ -126,7 +126,6 @@ object ImageProcessor {
                                  ((p21 shr 16) and 0xFF))
                 var r = r11 * centerWeight + rSurround * surroundWeight
 
-                // Green
                 val g11 = (p11 shr 8) and 0xFF
                 val gSurround = (((p01 shr 8) and 0xFF) +
                                  ((p10 shr 8) and 0xFF) +
@@ -134,7 +133,6 @@ object ImageProcessor {
                                  ((p21 shr 8) and 0xFF))
                 var g = g11 * centerWeight + gSurround * surroundWeight
 
-                // Blue
                 val b11 = p11 and 0xFF
                 val bSurround = ((p01 and 0xFF) +
                                  (p10 and 0xFF) +
@@ -144,7 +142,6 @@ object ImageProcessor {
 
                 val a = p11 and 0xFF000000.toInt()
 
-                // Clamp to [0, 255]
                 if (r < 0f) r = 0f else if (r > 255f) r = 255f
                 if (g < 0f) g = 0f else if (g > 255f) g = 255f
                 if (b < 0f) b = 0f else if (b > 255f) b = 255f
@@ -159,8 +156,52 @@ object ImageProcessor {
     }
 
     /**
+     * Erases unwanted objects, clutter, or people from a designated region.
+     */
+    fun removeObject(
+        src: Bitmap,
+        leftPercent: Float,
+        topPercent: Float,
+        widthPercent: Float,
+        heightPercent: Float
+    ): Bitmap {
+        return eraseWatermark(src, leftPercent, topPercent, widthPercent, heightPercent)
+    }
+
+    /**
+     * Smooths skin tones and sharpens facial detail.
+     */
+    fun faceRetouch(
+        src: Bitmap,
+        smoothPercent: Float,
+        clarityPercent: Float
+    ): Bitmap {
+        val width = src.width
+        val height = src.height
+        val tempBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(tempBitmap)
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+        }
+
+        val contrastScale = 1.0f + (clarityPercent / 300f)
+        val colorMatrix = ColorMatrix(floatArrayOf(
+            contrastScale, 0f, 0f, 0f, 0f,
+            0f, contrastScale, 0f, 0f, 0f,
+            0f, 0f, contrastScale, 0f, 0f,
+            0f, 0f, 0f, 1f, 0f
+        ))
+        paint.colorFilter = ColorMatrixColorFilter(colorMatrix)
+        canvas.drawBitmap(src, 0f, 0f, paint)
+
+        val sharpenStrength = 100f + (clarityPercent * 0.5f)
+        return sharpen(tempBitmap, sharpenStrength)
+    }
+
+    /**
      * Detects corner background color and removes background matching it within a tolerance.
-     * Matches Web App's "Background Removal" logic.
      */
     fun removeBackground(src: Bitmap, tolerance: Int): Bitmap {
         val width = src.width
@@ -168,7 +209,6 @@ object ImageProcessor {
         val pixels = IntArray(width * height)
         src.getPixels(pixels, 0, width, 0, 0, width, height)
 
-        // Top-left pixel as background color
         val cornerPixel = pixels[0]
         val cornerR = (cornerPixel shr 16) and 0xFF
         val cornerG = (cornerPixel shr 8) and 0xFF
@@ -188,7 +228,6 @@ object ImageProcessor {
                          (b - cornerB) * (b - cornerB)
 
             if (diffSq < thresholdSq) {
-                // Set alpha to 0 (make transparent)
                 pixels[i] = p and 0x00FFFFFF
             }
         }
@@ -200,7 +239,6 @@ object ImageProcessor {
 
     /**
      * Rotates a bitmap by a specified angle and flips it horizontally if requested.
-     * Matches Web App's "Rotate & Flip" logic.
      */
     fun rotateAndFlip(src: Bitmap, degrees: Int, flipHorizontal: Boolean): Bitmap {
         val matrix = android.graphics.Matrix().apply {
@@ -214,7 +252,6 @@ object ImageProcessor {
 
     /**
      * Smudges out watermark region using colors sampled above it.
-     * Matches Web App's "Watermark Eraser" logic.
      */
     fun eraseWatermark(
         src: Bitmap,
