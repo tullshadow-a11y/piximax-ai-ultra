@@ -12,7 +12,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -156,17 +158,22 @@ fun AppHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp)
+            .padding(horizontal = 10.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(CardBg)
             .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Left: Logo & "PixiMax Pro" Title
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.weight(1f, fill = false)
+        ) {
             // Neon Glowing 'P' Aperture Icon Canvas
-            Canvas(modifier = Modifier.size(28.dp)) {
+            Canvas(modifier = Modifier.size(26.dp)) {
                 val center = Offset(size.width / 2f, size.height / 2f)
                 val glowRadius = size.width / 2f
                 drawCircle(
@@ -213,21 +220,27 @@ fun AppHeader(
                 Text(
                     text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("app_title"),
                     color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
                 Text(
                     text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("app_subtitle"),
                     color = TextSub,
-                    fontSize = 11.sp
+                    fontSize = 9.sp,
+                    maxLines = 1
                 )
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        // Right: Language Selector (🌐 EN) | Free Usage Counter ("16/16 Free") | Login Button (🔑 Login) | PRO Button (⚡ PRO 4K)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             val context = LocalContext.current
 
-            // Language Selector Dropdown
+            // 1. Language Selector (🌐 EN)
             Box {
                 val currentOpt = com.novacore.piximaxaiultra.utils.LanguageManager.supportedLanguages.firstOrNull { it.code == currentLang }
                     ?: com.novacore.piximaxaiultra.utils.LanguageManager.supportedLanguages.first()
@@ -237,13 +250,14 @@ fun AppHeader(
                         .background(Color(0x268A2BE2))
                         .border(1.dp, AccentPurple, RoundedCornerShape(8.dp))
                         .clickable { langMenuExpanded = true }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 5.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "${currentOpt.flag} ${currentOpt.code.uppercase()}",
+                        text = "🌐 ${currentOpt.code.uppercase()}",
                         color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
                     )
                 }
 
@@ -256,7 +270,7 @@ fun AppHeader(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = "${option.flag} ${option.name}",
+                                    text = "🌐 ${option.code.uppercase()} (${option.name})",
                                     color = if (option.code == currentLang) AccentCyan else Color.White,
                                     fontSize = 12.sp,
                                     fontWeight = if (option.code == currentLang) FontWeight.Bold else FontWeight.Normal
@@ -271,50 +285,56 @@ fun AppHeader(
                 }
             }
 
+            // 2. Free Usage Counter ("16/16 Free")
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0x2600D2FF))
                     .border(1.dp, AccentCyan, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                    .padding(horizontal = 5.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = ExportManager.getRemainingExportsText(context, isProUser, currentLang),
                     color = AccentCyan,
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
             }
 
+            // 3. Login Button (🔑 Login)
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (isProUser) Color(0x2600D2FF) else Color(0x260088FF))
                     .border(1.dp, if (isProUser) AccentCyan else AccentBlue, RoundedCornerShape(8.dp))
                     .clickable { onSignInClick() }
-                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                    .padding(horizontal = 5.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = if (isProUser) com.novacore.piximaxaiultra.utils.LanguageManager.getString("pro_badge")
                            else com.novacore.piximaxaiultra.utils.LanguageManager.getString("login_btn"),
                     color = if (isProUser) AccentCyan else Color.White,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
             }
 
+            // 4. PRO Button (⚡ PRO 4K)
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(Brush.linearGradient(listOf(Color(0xFFFF9900), Color(0xFFFF5500))))
                     .clickable { onUpgradeClick() }
-                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                    .padding(horizontal = 5.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("upgrade_4k"),
                     color = Color.White,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
             }
         }
@@ -326,11 +346,14 @@ fun NavigationTabs(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit
 ) {
+    val scrollState = rememberScrollState()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         val tabs = listOf(
             com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_object_remover"),
@@ -343,25 +366,28 @@ fun NavigationTabs(
         tabs.forEachIndexed { index, title ->
             val isActive = selectedTab == index
             val tabBackground = if (isActive) {
-                Brush.linearGradient(listOf(AccentBlue.copy(alpha = 0.25f), AccentPurple.copy(alpha = 0.25f)))
+                Brush.linearGradient(listOf(AccentBlue.copy(alpha = 0.3f), AccentPurple.copy(alpha = 0.3f)))
             } else {
                 Brush.linearGradient(listOf(CardBg, CardBg))
             }
 
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(tabBackground)
-                    .border(1.dp, if (isActive) AccentBlue else BorderColor, RoundedCornerShape(8.dp))
+                    .border(
+                        width = 1.dp,
+                        color = if (isActive) AccentBlue else BorderColor,
+                        shape = RoundedCornerShape(20.dp)
+                    )
                     .clickable { onTabSelected(index) }
-                    .padding(vertical = 8.dp, horizontal = 1.dp),
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = title,
                     color = if (isActive) Color.White else TextSub,
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     maxLines = 1

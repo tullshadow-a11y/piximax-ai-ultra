@@ -7,8 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 
 data class LanguageOption(
     val code: String,
-    val name: String,
-    val flag: String
+    val name: String
 )
 
 object LanguageManager {
@@ -17,19 +16,19 @@ object LanguageManager {
     private const val KEY_LANG = "piximax_lang"
 
     val supportedLanguages = listOf(
-        LanguageOption("ar", "العربية", "🇸🇦"),
-        LanguageOption("en", "English", "🇺🇸"),
-        LanguageOption("fr", "Français", "🇫🇷"),
-        LanguageOption("es", "Español", "🇪🇸"),
-        LanguageOption("de", "Deutsch", "🇩🇪")
+        LanguageOption("en", "English"),
+        LanguageOption("ar", "العربية"),
+        LanguageOption("fr", "Français"),
+        LanguageOption("es", "Español"),
+        LanguageOption("de", "Deutsch")
     )
 
-    private val _currentLang = mutableStateOf("ar")
+    private val _currentLang = mutableStateOf("en")
     val currentLang: State<String> = _currentLang
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val savedLang = prefs.getString(KEY_LANG, "ar") ?: "ar"
+        val savedLang = prefs.getString(KEY_LANG, "en") ?: "en"
         _currentLang.value = savedLang
     }
 
@@ -77,11 +76,11 @@ object LanguageManager {
             "de" to "PRO 👑"
         ),
         "upgrade_4k" to mapOf(
-            "ar" to "PRO 4K⚡",
-            "en" to "PRO 4K⚡",
-            "fr" to "PRO 4K⚡",
-            "es" to "PRO 4K⚡",
-            "de" to "PRO 4K⚡"
+            "ar" to "⚡ PRO 4K",
+            "en" to "⚡ PRO 4K",
+            "fr" to "⚡ PRO 4K",
+            "es" to "⚡ PRO 4K",
+            "de" to "⚡ PRO 4K"
         ),
         "tab_object_remover" to mapOf(
             "ar" to "🎯 إزالة العناصر",

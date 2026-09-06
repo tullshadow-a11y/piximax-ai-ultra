@@ -50,11 +50,11 @@ class ExportAndLanguageManagerTest {
     fun testRemainingExportsTextFormatting() {
         var text = ExportManager.getRemainingExportsText(context, isProUser = false, lang = "ar")
         assertTrue(text.contains("16/16"))
-        assertTrue(text.contains("متبقي"))
+        assertTrue(text.contains("مجاني"))
 
         text = ExportManager.getRemainingExportsText(context, isProUser = false, lang = "en")
         assertTrue(text.contains("16/16"))
-        assertTrue(text.contains("Left"))
+        assertTrue(text.contains("Free"))
 
         // Pro user
         text = ExportManager.getRemainingExportsText(context, isProUser = true, lang = "en")
@@ -64,11 +64,15 @@ class ExportAndLanguageManagerTest {
     @Test
     fun testLanguageManagerSwitching() {
         LanguageManager.init(context)
+        assertEquals("en", LanguageManager.currentLang.value)
+
+        LanguageManager.setLanguage(context, "ar")
         assertEquals("ar", LanguageManager.currentLang.value)
+        assertEquals("PixiMax Pro", LanguageManager.getString("app_title"))
+        assertEquals("🔑 دخول", LanguageManager.getString("login_btn"))
 
         LanguageManager.setLanguage(context, "en")
         assertEquals("en", LanguageManager.currentLang.value)
-        assertEquals("PixiMax Pro", LanguageManager.getString("app_title"))
         assertEquals("🔑 Login", LanguageManager.getString("login_btn"))
 
         LanguageManager.setLanguage(context, "fr")
