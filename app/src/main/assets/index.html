@@ -339,7 +339,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
       <option value="es">🌐 ES</option>
       <option value="de">🌐 DE</option>
     </select>
-    <div id="exportCounterBadge" class="export-badge">16/16 Free</div>
+    <div id="exportCounterBadge" class="export-badge">10/10 Free</div>
     <button class="btn-signin" id="btnAuth" onclick="openAuthModal()">🔑 Login</button>
     <a href="https://whop.com/google-390e/piximax-ai-ultra/" target="_blank" class="badge-pro" id="btnUpgrade">⚡ PRO 4K</a>
   </div>
@@ -705,8 +705,8 @@ function updateExportCounterUI() {
     badge.style.color = 'var(--gold-pro)';
   } else {
     const used = getDailyExports();
-    const remaining = Math.max(0, 16 - used);
-    badge.innerText = currentLang === 'ar' ? `مجاني: ${remaining}/16` : `${remaining}/16 Free`;
+    const remaining = Math.max(0, 10 - used);
+    badge.innerText = currentLang === 'ar' ? `${remaining}/10 مجاني` : `${remaining}/10 Free`;
     badge.style.borderColor = remaining > 0 ? 'var(--accent-cyan)' : '#ff4444';
     badge.style.color = remaining > 0 ? 'var(--accent-cyan)' : '#ff4444';
   }
@@ -718,7 +718,7 @@ function checkAndProcessExport(callback) {
     return;
   }
   const used = getDailyExports();
-  if (used >= 16) {
+  if (used >= 10) {
     window.open("https://whop.com/google-390e/piximax-ai-ultra/", "_blank");
     openAuthModal();
     return;

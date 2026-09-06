@@ -395,14 +395,6 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                     return@Button
                 }
 
-                if (!ExportManager.canExport(context, isProUser)) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
-                    context.startActivity(intent)
-                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
-                    return@Button
-                }
-                ExportManager.recordExportAndShowAd(context, isProUser)
-
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_ObjectRemoved_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
                     Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_success_saved", currentLang), Toast.LENGTH_LONG).show()

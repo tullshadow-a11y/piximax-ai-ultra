@@ -220,20 +220,22 @@ fun AppHeader(
                 Text(
                     text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("app_title"),
                     color = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Text(
                     text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("app_subtitle"),
                     color = TextSub,
                     fontSize = 9.sp,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }
 
-        // Right: Language Selector (🌐 EN) | Free Usage Counter ("16/16 Free") | Login Button (🔑 Login) | PRO Button (⚡ PRO 4K)
+        // Right: Language Selector (🌐 EN) | Free Usage Counter ("10/10 Free") | Login Button (🔑 Login) | PRO Button (⚡ PRO 4K)
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -250,14 +252,16 @@ fun AppHeader(
                         .background(Color(0x268A2BE2))
                         .border(1.dp, AccentPurple, RoundedCornerShape(8.dp))
                         .clickable { langMenuExpanded = true }
-                        .padding(horizontal = 5.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "🌐 ${currentOpt.code.uppercase()}",
                         color = Color.White,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
 
