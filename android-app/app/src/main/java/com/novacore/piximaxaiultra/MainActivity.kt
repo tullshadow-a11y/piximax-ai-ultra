@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
         com.startapp.sdk.adsbase.StartAppSDK.init(this, "207695262", false)
         com.startapp.sdk.adsbase.StartAppSDK.enableReturnAds(false)
 
+        com.novacore.piximaxaiultra.utils.LanguageManager.init(this)
         sharedPreferences = getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
 
         setContent {
@@ -150,6 +151,8 @@ fun AppHeader(
     onSignInClick: () -> Unit,
     onUpgradeClick: () -> Unit
 ) {
+    val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
+    var langMenuExpanded by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -208,13 +211,13 @@ fun AppHeader(
 
             Column {
                 Text(
-                    text = "PixiMax Pro",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("app_title"),
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "NovaCore Software",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("app_subtitle"),
                     color = TextSub,
                     fontSize = 11.sp
                 )
@@ -223,6 +226,51 @@ fun AppHeader(
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             val context = LocalContext.current
+
+            // Language Selector Dropdown
+            Box {
+                val currentOpt = com.novacore.piximaxaiultra.utils.LanguageManager.supportedLanguages.firstOrNull { it.code == currentLang }
+                    ?: com.novacore.piximaxaiultra.utils.LanguageManager.supportedLanguages.first()
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0x268A2BE2))
+                        .border(1.dp, AccentPurple, RoundedCornerShape(8.dp))
+                        .clickable { langMenuExpanded = true }
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "${currentOpt.flag} ${currentOpt.code.uppercase()}",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = langMenuExpanded,
+                    onDismissRequest = { langMenuExpanded = false },
+                    modifier = Modifier.background(CardBg)
+                ) {
+                    com.novacore.piximaxaiultra.utils.LanguageManager.supportedLanguages.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "${option.flag} ${option.name}",
+                                    color = if (option.code == currentLang) AccentCyan else Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (option.code == currentLang) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            onClick = {
+                                com.novacore.piximaxaiultra.utils.LanguageManager.setLanguage(context, option.code)
+                                langMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
@@ -231,7 +279,7 @@ fun AppHeader(
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text = ExportManager.getRemainingExportsText(context, isProUser),
+                    text = ExportManager.getRemainingExportsText(context, isProUser, currentLang),
                     color = AccentCyan,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
@@ -247,7 +295,8 @@ fun AppHeader(
                     .padding(horizontal = 8.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text = if (isProUser) "PRO 👑" else "🔑 دخول",
+                    text = if (isProUser) com.novacore.piximaxaiultra.utils.LanguageManager.getString("pro_badge")
+                           else com.novacore.piximaxaiultra.utils.LanguageManager.getString("login_btn"),
                     color = if (isProUser) AccentCyan else Color.White,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
@@ -262,7 +311,7 @@ fun AppHeader(
                     .padding(horizontal = 8.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text = "PRO 4K⚡",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("upgrade_4k"),
                     color = Color.White,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
@@ -284,11 +333,11 @@ fun NavigationTabs(
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         val tabs = listOf(
-            "🎯 إزالة العناصر",
-            "✂️ إزالة الخلفية",
-            "✨ رتوش الوجه",
-            "🧼 مسح العلامة",
-            "🔍 رفع الجودة"
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_object_remover"),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_bg_removal"),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_face_retouch"),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_watermark"),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_enhance")
         )
 
         tabs.forEachIndexed { index, title ->
@@ -337,7 +386,7 @@ fun ProAuthDialog(
         containerColor = CardBg,
         title = {
             Text(
-                text = "تسجيل الدخول / Whop Pro Pass",
+                text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("dialog_title"),
                 color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
@@ -348,7 +397,7 @@ fun ProAuthDialog(
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "سجل الدخول بحساب Firebase أو أدخل رمز Whop Pro Pass للحصول على مميزات Pro وإزالة الإعلانات",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("dialog_desc"),
                     color = TextSub,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
@@ -358,7 +407,7 @@ fun ProAuthDialog(
                 OutlinedTextField(
                     value = emailText,
                     onValueChange = { emailText = it },
-                    placeholder = { Text("البريد الإلكتروني (Email)", color = TextSub) },
+                    placeholder = { Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("email_placeholder"), color = TextSub) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentBlue,
@@ -374,7 +423,7 @@ fun ProAuthDialog(
                 OutlinedTextField(
                     value = passwordText,
                     onValueChange = { passwordText = it },
-                    placeholder = { Text("كلمة المرور (Password)", color = TextSub) },
+                    placeholder = { Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("password_placeholder"), color = TextSub) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentBlue,
@@ -400,26 +449,26 @@ fun ProAuthDialog(
                                                     if (doc.getBoolean("isPro") == true) {
                                                         onAuthenticated()
                                                     } else {
-                                                        android.widget.Toast.makeText(context, "تم تسجيل الدخول بنجاح! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                                        android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
                                                         onDismiss()
                                                     }
                                                 }
                                         }
                                         .addOnFailureListener {
-                                            android.widget.Toast.makeText(context, "فشل تسجيل الدخول: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(context, "Login failed: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                 } catch (e: Exception) {
-                                    android.widget.Toast.makeText(context, "تم تسجيل الدخول! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                    android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
                                     onDismiss()
                                 }
                             } else {
-                                android.widget.Toast.makeText(context, "يرجى كتابة البريد وكلمة المرور الصحيحة", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, "Invalid email / password", android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
                     ) {
-                        Text("دخول 🔑", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_login"), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Button(
@@ -431,24 +480,24 @@ fun ProAuthDialog(
                                             val uid = authResult.user?.uid ?: ""
                                             val userMap = mapOf("email" to emailText.trim(), "isPro" to false)
                                             FirebaseFirestore.getInstance().collection("users").document(uid).set(userMap)
-                                            android.widget.Toast.makeText(context, "تم إنشاء الحساب بنجاح! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
                                             onDismiss()
                                         }
                                         .addOnFailureListener {
-                                            android.widget.Toast.makeText(context, "فشل إنشاء الحساب: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(context, "Failed: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                 } catch (e: Exception) {
-                                    android.widget.Toast.makeText(context, "تم إنشاء الحساب! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                    android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
                                     onDismiss()
                                 }
                             } else {
-                                android.widget.Toast.makeText(context, "يرجى كتابة البريد وكلمة المرور الصحيحة", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, "Invalid email / password", android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
                     ) {
-                        Text("حساب جديد", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_register"), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -459,7 +508,7 @@ fun ProAuthDialog(
                 OutlinedTextField(
                     value = keyText,
                     onValueChange = { keyText = it },
-                    placeholder = { Text("رمز Whop Pro Pass", color = TextSub) },
+                    placeholder = { Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("whop_key_placeholder"), color = TextSub) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentBlue,
@@ -486,17 +535,17 @@ fun ProAuthDialog(
                         }
                         onAuthenticated()
                     } else {
-                        android.widget.Toast.makeText(context, "أدخل رمز مفتاح Whop Pro الصحيح", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, "Enter valid Whop Pro key", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9900))
             ) {
-                Text("تفعيل Whop Pro ⚡", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_activate_pro"), color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء", color = TextSub)
+                Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_cancel"), color = TextSub)
             }
         }
     )

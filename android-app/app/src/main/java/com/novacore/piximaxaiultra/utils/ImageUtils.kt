@@ -11,23 +11,68 @@ import java.io.OutputStream
 
 object ImageUtils {
 
+    private const val MAX_IMAGE_DIMENSION = 2048
+
     /**
-     * Loads a mutable ARGB_8888 Bitmap from a Uri.
+     * Safely recycles a bitmap if it's not null and not already recycled.
      */
-    fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
+    fun safeRecycle(bitmap: Bitmap?) {
+        try {
+            if (bitmap != null && !bitmap.isRecycled) {
+                bitmap.recycle()
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * Loads a mutable ARGB_8888 Bitmap from a Uri, downsampled to MAX_IMAGE_DIMENSION to avoid OOM errors.
+     */
+    fun loadBitmapFromUri(context: Context, uri: Uri, maxDimension: Int = MAX_IMAGE_DIMENSION): Bitmap? {
         return try {
-            val rawBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            var rawBitmap: Bitmap? = null
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val source = ImageDecoder.createSource(context.contentResolver, uri)
-                ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                rawBitmap = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
                     decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
                     decoder.isMutableRequired = true
+                    val width = info.size.width
+                    val height = info.size.height
+                    if (width > maxDimension || height > maxDimension) {
+                        val maxSide = maxOf(width, height)
+                        val sampleSize = (maxSide / maxDimension).coerceAtLeast(1)
+                        decoder.setTargetSampleSize(sampleSize)
+                    }
                 }
             } else {
-                @Suppress("DEPRECATION")
-                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                val options = android.graphics.BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    android.graphics.BitmapFactory.decodeStream(stream, null, options)
+                }
+                var sampleSize = 1
+                if (options.outWidth > maxDimension || options.outHeight > maxDimension) {
+                    val maxSide = maxOf(options.outWidth, options.outHeight)
+                    sampleSize = (maxSide / maxDimension).coerceAtLeast(1)
+                }
+                val decodeOptions = android.graphics.BitmapFactory.Options().apply {
+                    inSampleSize = sampleSize
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                    inMutable = true
+                }
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    rawBitmap = android.graphics.BitmapFactory.decodeStream(stream, null, decodeOptions)
+                }
             }
-            rawBitmap.copy(Bitmap.Config.ARGB_8888, true)
-        } catch (e: Exception) {
+
+            val finalBmp = rawBitmap?.copy(Bitmap.Config.ARGB_8888, true)
+            if (rawBitmap != null && rawBitmap != finalBmp) {
+                safeRecycle(rawBitmap)
+            }
+            finalBmp
+        } catch (e: Throwable) {
             e.printStackTrace()
             null
         }
