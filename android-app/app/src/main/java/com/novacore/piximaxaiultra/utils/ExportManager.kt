@@ -2,6 +2,7 @@ package com.novacore.piximaxaiultra.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.compose.runtime.mutableStateOf
 import com.startapp.sdk.adsbase.StartAppAd
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -13,6 +14,8 @@ object ExportManager {
     private const val KEY_EXPORT_DATE = "piximax_export_date"
     private const val KEY_EXPORT_COUNT = "piximax_export_count"
     private const val MAX_FREE_DAILY_EXPORTS = 3
+
+    private val usageUpdateTrigger = mutableStateOf(0)
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -49,6 +52,7 @@ object ExportManager {
         val prefs = getPrefs(context)
         val currentCount = getDailyExportsUsed(context)
         prefs.edit().putInt(KEY_EXPORT_COUNT, currentCount + 1).apply()
+        usageUpdateTrigger.value += 1
 
         try {
             if (context is android.app.Activity) {
@@ -60,6 +64,8 @@ object ExportManager {
     }
 
     fun getRemainingExportsText(context: Context, isProUser: Boolean): String {
+        @Suppress("UNUSED_VARIABLE")
+        val dummy = usageUpdateTrigger.value // Trigger Compose recomposition when usage changes
         if (isProUser) return "غير محدود 👑"
         val used = getDailyExportsUsed(context)
         val remaining = (MAX_FREE_DAILY_EXPORTS - used).coerceAtLeast(0)

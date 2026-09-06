@@ -166,6 +166,162 @@ object ImageProcessor {
     }
 
     /**
+     * Erases unwanted objects using a freehand brush mask Bitmap (white pixels = erase).
+     */
+    fun removeObjectWithMask(src: Bitmap, mask: Bitmap): Bitmap {
+        val width = src.width
+        val height = src.height
+
+        val srcPixels = IntArray(width * height)
+        val maskPixels = IntArray(width * height)
+        src.getPixels(srcPixels, 0, width, 0, 0, width, height)
+        mask.getPixels(maskPixels, 0, width, 0, 0, width, height)
+
+        val isMasked = BooleanArray(width * height)
+        var hasMask = false
+
+        var minX = width
+        var maxX = 0
+        var minY = height
+        var maxY = 0
+
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val idx = y * width + x
+                val maskColor = maskPixels[idx]
+                if ((maskColor and 0x00FFFFFF) != 0 || ((maskColor ushr 24) > 50)) {
+                    isMasked[idx] = true
+                    hasMask = true
+                    if (x < minX) minX = x
+                    if (x > maxX) maxX = x
+                    if (y < minY) minY = y
+                    if (y > maxY) maxY = y
+                }
+            }
+        }
+
+        if (!hasMask) return src
+
+        val topUnmaskedY = IntArray(width * height)
+        val bottomUnmaskedY = IntArray(width * height)
+        val leftUnmaskedX = IntArray(width * height)
+        val rightUnmaskedX = IntArray(width * height)
+
+        for (y in minY..maxY) {
+            for (x in minX..maxX) {
+                val idx = y * width + x
+                if (!isMasked[idx]) continue
+
+                var ty = y - 1
+                while (ty >= 0 && isMasked[ty * width + x]) {
+                    ty--
+                }
+                topUnmaskedY[idx] = ty.coerceAtLeast(0)
+
+                var by = y + 1
+                while (by < height && isMasked[by * width + x]) {
+                    by++
+                }
+                bottomUnmaskedY[idx] = by.coerceAtMost(height - 1)
+
+                var lx = x - 1
+                while (lx >= 0 && isMasked[y * width + lx]) {
+                    lx--
+                }
+                leftUnmaskedX[idx] = lx.coerceAtLeast(0)
+
+                var rx = x + 1
+                while (rx < width && isMasked[y * width + rx]) {
+                    rx++
+                }
+                rightUnmaskedX[idx] = rx.coerceAtMost(width - 1)
+            }
+        }
+
+        val patchPixels = IntArray(width * height)
+
+        for (y in minY..maxY) {
+            for (x in minX..maxX) {
+                val idx = y * width + x
+                if (!isMasked[idx]) {
+                    patchPixels[idx] = srcPixels[idx]
+                    continue
+                }
+
+                val topY = topUnmaskedY[idx]
+                val bottomY = bottomUnmaskedY[idx]
+                val leftX = leftUnmaskedX[idx]
+                val rightX = rightUnmaskedX[idx]
+
+                val distTop = (y - topY + 1).toFloat()
+                val distBottom = (bottomY - y + 1).toFloat()
+                val distLeft = (x - leftX + 1).toFloat()
+                val distRight = (rightX - x + 1).toFloat()
+
+                val wT = 1f / (distTop * distTop)
+                val wB = 1f / (distBottom * distBottom)
+                val wL = 1f / (distLeft * distLeft)
+                val wR = 1f / (distRight * distRight)
+
+                val totalWeight = wT + wB + wL + wR
+
+                val pT = srcPixels[topY * width + x]
+                val pB = srcPixels[bottomY * width + x]
+                val pL = srcPixels[y * width + leftX]
+                val pR = srcPixels[rightX * width + x] // using right boundary
+
+                val r = (((pT shr 16) and 0xFF) * wT + ((pB shr 16) and 0xFF) * wB +
+                         ((pL shr 16) and 0xFF) * wL + ((pR shr 16) and 0xFF) * wR) / totalWeight
+                val g = (((pT shr 8) and 0xFF) * wT + ((pB shr 8) and 0xFF) * wB +
+                         ((pL shr 8) and 0xFF) * wL + ((pR shr 8) and 0xFF) * wR) / totalWeight
+                val b = ((pT and 0xFF) * wT + (pB and 0xFF) * wB +
+                         (pL and 0xFF) * wL + (pR and 0xFF) * wR) / totalWeight
+                val a = (srcPixels[idx] and 0xFF000000.toInt())
+
+                patchPixels[idx] = a or (r.toInt().coerceIn(0, 255) shl 16) or
+                        (g.toInt().coerceIn(0, 255) shl 8) or b.toInt().coerceIn(0, 255)
+            }
+        }
+
+        // Pass 2: Local 3x3 smoothing over inpainted mask region
+        val outputPixels = srcPixels.clone()
+        for (y in minY..maxY) {
+            for (x in minX..maxX) {
+                val idx = y * width + x
+                if (!isMasked[idx]) continue
+
+                var sumR = 0f
+                var sumG = 0f
+                var sumB = 0f
+                var count = 0
+
+                for (dy in -1..1) {
+                    val ny = (y + dy).coerceIn(0, height - 1)
+                    for (dx in -1..1) {
+                        val nx = (x + dx).coerceIn(0, width - 1)
+                        val p = patchPixels[ny * width + nx]
+                        sumR += (p shr 16) and 0xFF
+                        sumG += (p shr 8) and 0xFF
+                        sumB += p and 0xFF
+                        count++
+                    }
+                }
+
+                val alpha = srcPixels[idx] and 0xFF000000.toInt()
+                val finalR = (sumR / count).toInt().coerceIn(0, 255)
+                val finalG = (sumG / count).toInt().coerceIn(0, 255)
+                val finalB = (sumB / count).toInt().coerceIn(0, 255)
+
+                outputPixels[idx] = alpha or (finalR shl 16) or (finalG shl 8) or finalB
+            }
+        }
+
+        val outBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        outBitmap.setPixels(outputPixels, 0, width, 0, 0, width, height)
+        return outBitmap
+    }
+
+    /**
      * Applies skin tone smoothing (surface blur on skin colors) while keeping facial clarity.
      */
     fun faceRetouch(
