@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun BgRemovalScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
+    val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
     val coroutineScope = rememberCoroutineScope()
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -59,11 +60,23 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
             selectedImageUri = uri
             isProcessing = true
             coroutineScope.launch {
-                val bmp = withContext(Dispatchers.IO) {
-                    ImageUtils.loadBitmapFromUri(context, uri)
+                try {
+                    val bmp = withContext(Dispatchers.IO) {
+                        ImageUtils.loadBitmapFromUri(context, uri)
+                    }
+                    if (originalBitmap != bmp) {
+                        ImageUtils.safeRecycle(originalBitmap)
+                    }
+                    if (processedBitmap != bmp && processedBitmap != originalBitmap) {
+                        ImageUtils.safeRecycle(processedBitmap)
+                    }
+                    originalBitmap = bmp
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
+                } finally {
+                    isProcessing = false
                 }
-                originalBitmap = bmp
-                isProcessing = false
             }
         }
     }
@@ -72,11 +85,19 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
         val original = originalBitmap ?: return@LaunchedEffect
         isProcessing = true
         coroutineScope.launch {
-            val result = withContext(Dispatchers.Default) {
-                ImageProcessor.removeBackground(original, tolerance.toInt())
+            try {
+                val result = withContext(Dispatchers.Default) {
+                    ImageProcessor.removeBackground(original, tolerance.toInt())
+                }
+                if (processedBitmap != result && processedBitmap != original) {
+                    ImageUtils.safeRecycle(processedBitmap)
+                }
+                processedBitmap = result
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            } finally {
+                isProcessing = false
             }
-            processedBitmap = result
-            isProcessing = false
         }
     }
 
@@ -99,7 +120,7 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "✂️ اضغط هنا لاختيار صورة لتفريغ الخلفية (PNG)",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("bg_upload_prompt", currentLang),
                     color = Color(0xFFE91E63),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -144,7 +165,7 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
                 )
             } else {
                 Text(
-                    text = "لم يتم اختيار صورة بعد",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("no_image_selected", currentLang),
                     color = TextSub,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center
@@ -167,7 +188,7 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
 
         processedBitmap?.let { bmp ->
             Text(
-                text = "أبعاد الصورة الشفافة: ${bmp.width} × ${bmp.height} px",
+                text = "${com.novacore.piximaxaiultra.utils.LanguageManager.getString("bg_dimensions", currentLang)} ${bmp.width} × ${bmp.height} px",
                 color = TextSub,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
@@ -189,7 +210,7 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "حساسية التفريغ (Tolerance)", color = TextSub, fontSize = 11.sp)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("tolerance", currentLang), color = TextSub, fontSize = 11.sp)
                 Text(text = "${tolerance.toInt()}", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -210,23 +231,23 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
             onClick = {
                 val outBmp = processedBitmap
                 if (outBmp == null) {
-                    Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_select_first", currentLang), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
-                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
                     return@Button
                 }
                 ExportManager.recordExportAndShowAd(context, isProUser)
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Transparent_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
-                    Toast.makeText(context, "تم الحفظ! ✨", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_success_saved", currentLang), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(context, "فشل حفظ الملف", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier
@@ -243,7 +264,7 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "💾 تصدير PNG شفافة بدقة فائقة",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_export_transparent", currentLang),
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold

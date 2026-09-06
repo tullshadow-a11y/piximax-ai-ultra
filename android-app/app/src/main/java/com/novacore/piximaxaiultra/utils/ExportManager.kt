@@ -13,7 +13,7 @@ object ExportManager {
     private const val PREFS_NAME = "piximax_prefs"
     private const val KEY_EXPORT_DATE = "piximax_export_date"
     private const val KEY_EXPORT_COUNT = "piximax_export_count"
-    private const val MAX_FREE_DAILY_EXPORTS = 3
+    const val MAX_FREE_DAILY_EXPORTS = 16
 
     private val usageUpdateTrigger = mutableStateOf(0)
 
@@ -63,12 +63,27 @@ object ExportManager {
         }
     }
 
-    fun getRemainingExportsText(context: Context, isProUser: Boolean): String {
+    fun getRemainingExportsText(context: Context, isProUser: Boolean, lang: String = "ar"): String {
         @Suppress("UNUSED_VARIABLE")
         val dummy = usageUpdateTrigger.value // Trigger Compose recomposition when usage changes
-        if (isProUser) return "غير محدود 👑"
+        if (isProUser) {
+            return when (lang) {
+                "en" -> "Unlimited 👑"
+                "fr" -> "Illimité 👑"
+                "es" -> "Ilimitado 👑"
+                "de" -> "Unbegrenzt 👑"
+                else -> "غير محدود 👑"
+            }
+        }
         val used = getDailyExportsUsed(context)
         val remaining = (MAX_FREE_DAILY_EXPORTS - used).coerceAtLeast(0)
-        return "متبقي: $remaining/3"
+        val prefix = when (lang) {
+            "en" -> "Left:"
+            "fr" -> "Reste:"
+            "es" -> "Restante:"
+            "de" -> "Verbleibend:"
+            else -> "متبقي:"
+        }
+        return "$prefix $remaining/$MAX_FREE_DAILY_EXPORTS"
     }
 }

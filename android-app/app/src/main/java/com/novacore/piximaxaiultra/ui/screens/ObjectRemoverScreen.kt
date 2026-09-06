@@ -50,6 +50,7 @@ data class DrawnStroke(
 @Composable
 fun ObjectRemoverScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
+    val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -60,7 +61,8 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
     var isProcessing by remember { mutableStateOf(false) }
 
     var brushSizeDp by remember { mutableStateOf(30f) }
-    var strokeList by remember { mutableStateOf(listOf<DrawnStroke>()) }
+    val strokeList = remember { mutableStateListOf<DrawnStroke>() }
+    var redrawSignal by remember { mutableIntStateOf(0) }
 
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     var drawLeft by remember { mutableStateOf(0f) }
@@ -75,13 +77,26 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
             selectedImageUri = uri
             isProcessing = true
             coroutineScope.launch {
-                val bmp = withContext(Dispatchers.IO) {
-                    ImageUtils.loadBitmapFromUri(context, uri)
+                try {
+                    val bmp = withContext(Dispatchers.IO) {
+                        ImageUtils.loadBitmapFromUri(context, uri)
+                    }
+                    if (originalBitmap != bmp) {
+                        ImageUtils.safeRecycle(originalBitmap)
+                    }
+                    if (processedBitmap != bmp && processedBitmap != originalBitmap) {
+                        ImageUtils.safeRecycle(processedBitmap)
+                    }
+                    originalBitmap = bmp
+                    processedBitmap = bmp
+                    strokeList.clear()
+                    redrawSignal++
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "فشل تحميل الصورة", Toast.LENGTH_SHORT).show()
+                } finally {
+                    isProcessing = false
                 }
-                originalBitmap = bmp
-                processedBitmap = bmp
-                strokeList = emptyList()
-                isProcessing = false
             }
         }
     }
@@ -128,7 +143,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "🎯 اضغط هنا لاختيار صورة لإزالة العناصر بالأصبع (Brush)",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("obj_upload_prompt", currentLang),
                     color = AccentBlue,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -161,7 +176,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                         contentScale = ContentScale.Fit
                     )
 
-                    // Finger Paint Touch Canvas Overlay
+                    // Finger Paint Touch Canvas Overlay with Low-Latency Redraw Signal
                     Canvas(
                         modifier = Modifier
                             .fillMaxSize()
@@ -172,7 +187,8 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                                             val relX = (offset.x - drawLeft).coerceIn(0f, drawW)
                                             val relY = (offset.y - drawTop).coerceIn(0f, drawH)
                                             val newPath = Path().apply { moveTo(relX, relY) }
-                                            strokeList = strokeList + DrawnStroke(newPath, brushSizeDp)
+                                            strokeList.add(DrawnStroke(newPath, brushSizeDp))
+                                            redrawSignal++
                                         }
                                     },
                                     onDrag = { change, _ ->
@@ -182,12 +198,14 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                                             val relX = (offset.x - drawLeft).coerceIn(0f, drawW)
                                             val relY = (offset.y - drawTop).coerceIn(0f, drawH)
                                             strokeList.lastOrNull()?.path?.lineTo(relX, relY)
-                                            strokeList = strokeList.toList()
+                                            redrawSignal++
                                         }
                                     }
                                 )
                             }
                     ) {
+                        @Suppress("UNUSED_VARIABLE")
+                        val dummy = redrawSignal // Observe redrawSignal for low-latency invalidation
                         translate(left = drawLeft, top = drawTop) {
                             strokeList.forEach { stroke ->
                                 val strokePx = stroke.strokeWidthDp * density.density
@@ -206,7 +224,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                 }
             } else {
                 Text(
-                    text = "لم يتم اختيار صورة بعد",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("no_image_selected", currentLang),
                     color = TextSub,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center
@@ -228,7 +246,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "ارسم بأصبعك فوق العنصر المراد مسحه بالكامل",
+            text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("obj_draw_instruction", currentLang),
             color = TextSub,
             fontSize = 11.sp,
             textAlign = TextAlign.Center
@@ -250,7 +268,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "حجم الفرشاة (Brush Size)", color = TextSub, fontSize = 11.sp)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("brush_size", currentLang), color = TextSub, fontSize = 11.sp)
                 Text(text = "${brushSizeDp.toInt()} px", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -263,12 +281,15 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = { strokeList = emptyList() },
+                onClick = {
+                    strokeList.clear()
+                    redrawSignal++
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text(text = "مسح التحديد 🗑️", color = TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("clear_selection", currentLang), color = TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -279,63 +300,75 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
             onClick = {
                 val currentBmp = originalBitmap
                 if (currentBmp == null || drawW <= 0f || drawH <= 0f) {
-                    Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_select_first", currentLang), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 if (strokeList.isEmpty()) {
-                    Toast.makeText(context, "قم بالرسم بأصبعك فوق العنصر المراد مسحه أولاً!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_draw_first", currentLang), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
-                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 استخدامات). اشترك في Whop Pro للوصول غير المحدود!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
                     return@Button
                 }
                 ExportManager.recordExportAndShowAd(context, isProUser)
 
-                val liveStrokes = strokeList
+                val liveStrokes = strokeList.toList()
                 val liveDrawW = drawW
                 val liveDrawH = drawH
                 val densityVal = density.density
 
                 isProcessing = true
                 coroutineScope.launch {
-                    val result = withContext(Dispatchers.Default) {
-                        val maskBmp = Bitmap.createBitmap(currentBmp.width, currentBmp.height, Bitmap.Config.ARGB_8888)
-                        val maskCanvas = android.graphics.Canvas(maskBmp)
-                        val paint = android.graphics.Paint().apply {
-                            color = android.graphics.Color.WHITE
-                            style = android.graphics.Paint.Style.STROKE
-                            strokeCap = android.graphics.Paint.Cap.ROUND
-                            strokeJoin = android.graphics.Paint.Join.ROUND
-                            isAntiAlias = true
-                        }
-
-                        val scaleX = currentBmp.width.toFloat() / liveDrawW
-                        val scaleY = currentBmp.height.toFloat() / liveDrawH
-
-                        liveStrokes.forEach { stroke ->
-                            paint.strokeWidth = stroke.strokeWidthDp * densityVal * scaleX
-                            val nativePath = stroke.path.asAndroidPath()
-                            val matrix = android.graphics.Matrix().apply {
-                                setScale(scaleX, scaleY)
+                    try {
+                        val result = withContext(Dispatchers.Default) {
+                            val maskBmp = Bitmap.createBitmap(currentBmp.width, currentBmp.height, Bitmap.Config.ARGB_8888)
+                            val maskCanvas = android.graphics.Canvas(maskBmp)
+                            val paint = android.graphics.Paint().apply {
+                                color = android.graphics.Color.WHITE
+                                style = android.graphics.Paint.Style.STROKE
+                                strokeCap = android.graphics.Paint.Cap.ROUND
+                                strokeJoin = android.graphics.Paint.Join.ROUND
+                                isAntiAlias = true
                             }
-                            val scaledPath = android.graphics.Path()
-                            nativePath.transform(matrix, scaledPath)
-                            maskCanvas.drawPath(scaledPath, paint)
+
+                            val scaleX = currentBmp.width.toFloat() / liveDrawW
+                            val scaleY = currentBmp.height.toFloat() / liveDrawH
+
+                            liveStrokes.forEach { stroke ->
+                                paint.strokeWidth = stroke.strokeWidthDp * densityVal * scaleX
+                                val nativePath = stroke.path.asAndroidPath()
+                                val matrix = android.graphics.Matrix().apply {
+                                    setScale(scaleX, scaleY)
+                                }
+                                val scaledPath = android.graphics.Path()
+                                nativePath.transform(matrix, scaledPath)
+                                maskCanvas.drawPath(scaledPath, paint)
+                            }
+
+                            val res = ImageProcessor.removeObjectWithMask(currentBmp, maskBmp)
+                            ImageUtils.safeRecycle(maskBmp)
+                            res
                         }
 
-                        ImageProcessor.removeObjectWithMask(currentBmp, maskBmp)
+                        if (processedBitmap != result && processedBitmap != originalBitmap) {
+                            ImageUtils.safeRecycle(processedBitmap)
+                        }
+                        processedBitmap = result
+                        originalBitmap = result
+                        strokeList.clear()
+                        redrawSignal++
+                        Toast.makeText(context, "تم مسح وإزالة العنصر بنجاح! ✨", Toast.LENGTH_LONG).show()
+                    } catch (e: Throwable) {
+                        e.printStackTrace()
+                        Toast.makeText(context, "حدث خطأ أثناء معالجة الصورة", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        isProcessing = false
                     }
-
-                    processedBitmap = result
-                    originalBitmap = result
-                    strokeList = emptyList()
-                    isProcessing = false
-                    Toast.makeText(context, "تم مسح وإزالة العنصر بنجاح! ✨", Toast.LENGTH_LONG).show()
                 }
             },
             modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -347,7 +380,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                 modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(AccentBlue, AccentCyan))),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "✨ إزالة العنصر المحدد بالأصبع", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_erase_object", currentLang), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -358,23 +391,23 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
             onClick = {
                 val outBmp = processedBitmap
                 if (outBmp == null) {
-                    Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_select_first", currentLang), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
-                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
                     return@Button
                 }
                 ExportManager.recordExportAndShowAd(context, isProUser)
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_ObjectRemoved_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
-                    Toast.makeText(context, "تم الحفظ! ✨", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_success_saved", currentLang), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(context, "فشل حفظ الملف", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -386,7 +419,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                 modifier = Modifier.fillMaxSize().background(BorderColor),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "💾 حفظ وتصدير الصورة النظيفة", color = TextMain, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_save_clean_image", currentLang), color = TextMain, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

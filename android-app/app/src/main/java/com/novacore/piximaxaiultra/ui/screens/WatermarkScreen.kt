@@ -46,6 +46,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun WatermarkScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
+    val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -73,13 +74,25 @@ fun WatermarkScreen(isProUser: Boolean = false) {
             selectedImageUri = uri
             isProcessing = true
             coroutineScope.launch {
-                val bmp = withContext(Dispatchers.IO) {
-                    ImageUtils.loadBitmapFromUri(context, uri)
+                try {
+                    val bmp = withContext(Dispatchers.IO) {
+                        ImageUtils.loadBitmapFromUri(context, uri)
+                    }
+                    if (originalBitmap != bmp) {
+                        ImageUtils.safeRecycle(originalBitmap)
+                    }
+                    if (processedBitmap != bmp && processedBitmap != originalBitmap) {
+                        ImageUtils.safeRecycle(processedBitmap)
+                    }
+                    originalBitmap = bmp
+                    processedBitmap = bmp
+                    maskOffset = Offset(100f, 100f)
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
+                } finally {
+                    isProcessing = false
                 }
-                originalBitmap = bmp
-                processedBitmap = bmp
-                isProcessing = false
-                maskOffset = Offset(100f, 100f)
             }
         }
     }
@@ -148,7 +161,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "🧼 اضغط هنا لاختيار صورة لمسح العلامة المائية",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("watermark_upload_prompt", currentLang),
                     color = Color(0xFF00B09B),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -212,7 +225,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                 }
             } else {
                 Text(
-                    text = "لم يتم اختيار صورة بعد",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("no_image_selected", currentLang),
                     color = TextSub,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center
@@ -234,7 +247,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "حدد المربع القابل للسحب فوق العلامة المائية تماماً",
+            text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("watermark_instruction", currentLang),
             color = TextSub,
             fontSize = 11.sp,
             textAlign = TextAlign.Center,
@@ -255,7 +268,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "عرض صندوق التحديد (Width)", color = TextSub, fontSize = 11.sp)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("box_width", currentLang), color = TextSub, fontSize = 11.sp)
                 Text(text = "${maskWidthDp.toInt()} dp", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -275,7 +288,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "ارتفاع صندوق التحديد (Height)", color = TextSub, fontSize = 11.sp)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("box_height", currentLang), color = TextSub, fontSize = 11.sp)
                 Text(text = "${maskHeightDp.toInt()} dp", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -296,14 +309,14 @@ fun WatermarkScreen(isProUser: Boolean = false) {
             onClick = {
                 val currentBmp = originalBitmap
                 if (currentBmp == null || drawW <= 0f || drawH <= 0f) {
-                    Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_select_first", currentLang), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
-                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 استخدامات). اشترك في Whop Pro للوصول غير المحدود!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
                     return@Button
                 }
                 ExportManager.recordExportAndShowAd(context, isProUser)
@@ -318,28 +331,36 @@ fun WatermarkScreen(isProUser: Boolean = false) {
 
                 isProcessing = true
                 coroutineScope.launch {
-                    val result = withContext(Dispatchers.Default) {
-                        val touchX = liveMaskOffset.x - liveDrawLeft
-                        val touchY = liveMaskOffset.y - liveDrawTop
+                    try {
+                        val result = withContext(Dispatchers.Default) {
+                            val touchX = liveMaskOffset.x - liveDrawLeft
+                            val touchY = liveMaskOffset.y - liveDrawTop
 
-                        val relativeLeft = touchX / liveDrawW
-                        val relativeTop = touchY / liveDrawH
-                        val relativeW = liveMaskWidthPx / liveDrawW
-                        val relativeH = liveMaskHeightPx / liveDrawH
+                            val relativeLeft = touchX / liveDrawW
+                            val relativeTop = touchY / liveDrawH
+                            val relativeW = liveMaskWidthPx / liveDrawW
+                            val relativeH = liveMaskHeightPx / liveDrawH
 
-                        ImageProcessor.eraseWatermark(
-                            src = currentBmp,
-                            leftPercent = relativeLeft.coerceIn(0f, 1f),
-                            topPercent = relativeTop.coerceIn(0f, 1f),
-                            widthPercent = relativeW.coerceIn(0f, 1f),
-                            heightPercent = relativeH.coerceIn(0f, 1f)
-                        )
+                            ImageProcessor.eraseWatermark(
+                                src = currentBmp,
+                                leftPercent = relativeLeft.coerceIn(0f, 1f),
+                                topPercent = relativeTop.coerceIn(0f, 1f),
+                                widthPercent = relativeW.coerceIn(0f, 1f),
+                                heightPercent = relativeH.coerceIn(0f, 1f)
+                            )
+                        }
+
+                        if (processedBitmap != result && processedBitmap != originalBitmap) {
+                            ImageUtils.safeRecycle(processedBitmap)
+                        }
+                        processedBitmap = result
+                        originalBitmap = result
+                        Toast.makeText(context, "Done! ✨", Toast.LENGTH_LONG).show()
+                    } catch (e: Throwable) {
+                        e.printStackTrace()
+                    } finally {
+                        isProcessing = false
                     }
-
-                    processedBitmap = result
-                    originalBitmap = result
-                    isProcessing = false
-                    Toast.makeText(context, "تم مسح العلامة المائية! ✨", Toast.LENGTH_LONG).show()
                 }
             },
             modifier = Modifier
@@ -356,7 +377,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "🧼 تطبيق المسح الذكي الحقيقي",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_apply_watermark_eraser", currentLang),
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
@@ -370,23 +391,23 @@ fun WatermarkScreen(isProUser: Boolean = false) {
             onClick = {
                 val outBmp = processedBitmap
                 if (outBmp == null) {
-                    Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_select_first", currentLang), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
-                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
                     return@Button
                 }
                 ExportManager.recordExportAndShowAd(context, isProUser)
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Cleaned_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
-                    Toast.makeText(context, "تم الحفظ! ✨", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_success_saved", currentLang), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(context, "فشل حفظ الملف", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier
@@ -403,7 +424,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "💾 تصدير الملف النظيف",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_export_cleaned", currentLang),
                     color = TextMain,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold

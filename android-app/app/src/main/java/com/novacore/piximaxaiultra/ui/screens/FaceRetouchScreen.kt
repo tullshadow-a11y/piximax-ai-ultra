@@ -40,6 +40,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun FaceRetouchScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
+    val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
     val coroutineScope = rememberCoroutineScope()
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -57,11 +58,23 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
             selectedImageUri = uri
             isProcessing = true
             coroutineScope.launch {
-                val bmp = withContext(Dispatchers.IO) {
-                    ImageUtils.loadBitmapFromUri(context, uri)
+                try {
+                    val bmp = withContext(Dispatchers.IO) {
+                        ImageUtils.loadBitmapFromUri(context, uri)
+                    }
+                    if (originalBitmap != bmp) {
+                        ImageUtils.safeRecycle(originalBitmap)
+                    }
+                    if (processedBitmap != bmp && processedBitmap != originalBitmap) {
+                        ImageUtils.safeRecycle(processedBitmap)
+                    }
+                    originalBitmap = bmp
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
+                } finally {
+                    isProcessing = false
                 }
-                originalBitmap = bmp
-                isProcessing = false
             }
         }
     }
@@ -70,11 +83,19 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
         val original = originalBitmap ?: return@LaunchedEffect
         isProcessing = true
         coroutineScope.launch {
-            val result = withContext(Dispatchers.Default) {
-                ImageProcessor.faceRetouch(original, smoothPercent, clarityPercent)
+            try {
+                val result = withContext(Dispatchers.Default) {
+                    ImageProcessor.faceRetouch(original, smoothPercent, clarityPercent)
+                }
+                if (processedBitmap != result && processedBitmap != original) {
+                    ImageUtils.safeRecycle(processedBitmap)
+                }
+                processedBitmap = result
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            } finally {
+                isProcessing = false
             }
-            processedBitmap = result
-            isProcessing = false
         }
     }
 
@@ -98,7 +119,7 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "✨ اضغط هنا لاختيار صورة لتنعيم وتجميل البشرة",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("face_upload_prompt", currentLang),
                     color = Color(0xFFFF007F),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -128,7 +149,7 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
                 )
             } else {
                 Text(
-                    text = "لم يتم اختيار صورة بعد",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("no_image_selected", currentLang),
                     color = TextSub,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center
@@ -151,7 +172,7 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
 
         processedBitmap?.let { bmp ->
             Text(
-                text = "أبعاد الصورة: ${bmp.width} × ${bmp.height} px",
+                text = "${com.novacore.piximaxaiultra.utils.LanguageManager.getString("image_dimensions", currentLang)} ${bmp.width} × ${bmp.height} px",
                 color = TextSub,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center
@@ -170,7 +191,7 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
                 .padding(14.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "تنعيم وتصفية البشرة (Skin Smooth)", color = TextSub, fontSize = 11.sp)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("skin_smooth", currentLang), color = TextSub, fontSize = 11.sp)
                 Text(text = "${smoothPercent.toInt()}%", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -183,7 +204,7 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "إبراز تفاصيل العيون والشعر (Clarity)", color = TextSub, fontSize = 11.sp)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("clarity", currentLang), color = TextSub, fontSize = 11.sp)
                 Text(text = "${clarityPercent.toInt()}%", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -198,19 +219,23 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
 
         Button(
             onClick = {
-                val outBmp = processedBitmap ?: return@Button
+                val outBmp = processedBitmap
+                if (outBmp == null) {
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_select_first", currentLang), Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
                 if (!ExportManager.canExport(context, isProUser)) {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
-                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
                     return@Button
                 }
                 ExportManager.recordExportAndShowAd(context, isProUser)
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Retouched_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
-                    Toast.makeText(context, "تم الحفظ! ✨", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_success_saved", currentLang), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(context, "فشل حفظ الملف", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -222,7 +247,7 @@ fun FaceRetouchScreen(isProUser: Boolean = false) {
                 modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(AccentPurple, Color(0xFFFF007F)))),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "💾 تصدير الوجه المشرق (Retouched HD)", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_export_retouched", currentLang), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
