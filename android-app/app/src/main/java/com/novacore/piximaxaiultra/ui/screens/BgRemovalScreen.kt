@@ -215,7 +215,7 @@ fun BgRemovalScreen(isProUser: Boolean = false) {
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/whacka/piximax-pro-pass/"))
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
                     Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
                     return@Button

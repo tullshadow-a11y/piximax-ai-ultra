@@ -39,7 +39,6 @@ import com.novacore.piximaxaiultra.ui.theme.*
 import com.novacore.piximaxaiultra.utils.ExportManager
 import com.novacore.piximaxaiultra.utils.ImageProcessor
 import com.novacore.piximaxaiultra.utils.ImageUtils
-import com.startapp.sdk.adsbase.StartAppAd
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -301,6 +300,14 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                     return@Button
                 }
 
+                if (!ExportManager.canExport(context, isProUser)) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
+                    context.startActivity(intent)
+                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 استخدامات). اشترك في Whop Pro للوصول غير المحدود!", Toast.LENGTH_LONG).show()
+                    return@Button
+                }
+                ExportManager.recordExportAndShowAd(context, isProUser)
+
                 val liveMaskOffset = maskOffset
                 val liveMaskWidthPx = maskWidthPx
                 val liveMaskHeightPx = maskHeightPx
@@ -368,7 +375,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/whacka/piximax-pro-pass/"))
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
                     Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
                     return@Button

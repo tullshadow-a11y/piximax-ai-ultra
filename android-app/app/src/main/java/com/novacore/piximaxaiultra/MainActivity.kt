@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                             isProUser = isProUser,
                             onSignInClick = { showAuthDialog = true },
                             onUpgradeClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/whacka/piximax-pro-pass/"))
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                                 startActivity(intent)
                             }
                         )
