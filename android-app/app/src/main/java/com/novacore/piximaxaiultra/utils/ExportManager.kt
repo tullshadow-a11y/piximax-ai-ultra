@@ -63,7 +63,7 @@ object ExportManager {
         }
     }
 
-    fun getRemainingExportsText(context: Context, isProUser: Boolean, lang: String = "ar"): String {
+    fun getRemainingExportsText(context: Context, isProUser: Boolean, lang: String = "en"): String {
         @Suppress("UNUSED_VARIABLE")
         val dummy = usageUpdateTrigger.value // Trigger Compose recomposition when usage changes
         if (isProUser) {
@@ -77,13 +77,12 @@ object ExportManager {
         }
         val used = getDailyExportsUsed(context)
         val remaining = (MAX_FREE_DAILY_EXPORTS - used).coerceAtLeast(0)
-        val prefix = when (lang) {
-            "en" -> "Left:"
-            "fr" -> "Reste:"
-            "es" -> "Restante:"
-            "de" -> "Verbleibend:"
-            else -> "متبقي:"
+        return when (lang) {
+            "en" -> "$remaining/$MAX_FREE_DAILY_EXPORTS Free"
+            "fr" -> "$remaining/$MAX_FREE_DAILY_EXPORTS Gratuit"
+            "es" -> "$remaining/$MAX_FREE_DAILY_EXPORTS Gratis"
+            "de" -> "$remaining/$MAX_FREE_DAILY_EXPORTS Frei"
+            else -> "مجاني: $remaining/$MAX_FREE_DAILY_EXPORTS"
         }
-        return "$prefix $remaining/$MAX_FREE_DAILY_EXPORTS"
     }
 }

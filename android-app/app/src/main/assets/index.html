@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -45,31 +45,51 @@ body {
   align-items: center;
   justify-content: space-between;
   background: var(--card-bg);
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid var(--border-color);
   margin-bottom: 14px;
+  gap: 8px;
 }
 
 .logo-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .aperture-icon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   filter: drop-shadow(0 0 8px rgba(0, 210, 255, 0.8));
 }
 
-.app-title { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
-.dev-title { font-size: 11px; color: var(--text-sub); }
+.app-title { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+.dev-title { font-size: 10px; color: var(--text-sub); }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-lang {
+  background: rgba(138, 43, 226, 0.15);
+  border: 1px solid var(--accent-purple);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 5px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+.btn-lang option {
+  background: var(--card-bg);
+  color: #fff;
 }
 
 .export-badge {
@@ -118,20 +138,24 @@ body {
 
 .nav-tabs {
   display: flex;
-  gap: 5px;
+  gap: 8px;
   margin-bottom: 14px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.nav-tabs::-webkit-scrollbar {
+  display: none;
 }
 .tab-btn {
-  flex: 1;
-  min-width: 90px;
-  padding: 10px 6px;
+  flex: 0 0 auto;
+  padding: 8px 16px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   color: var(--text-sub);
-  border-radius: 10px;
-  font-size: 11px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: bold;
   cursor: pointer;
   text-align: center;
@@ -139,10 +163,10 @@ body {
   transition: all 0.2s;
 }
 .tab-btn.active {
-  background: linear-gradient(135deg, rgba(0, 136, 255, 0.25), rgba(138, 43, 226, 0.25));
+  background: linear-gradient(135deg, rgba(0, 136, 255, 0.3), rgba(138, 43, 226, 0.3));
   border-color: var(--accent-blue);
   color: #fff;
-  box-shadow: 0 0 10px rgba(0, 136, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 136, 255, 0.25);
 }
 
 .section-card {
@@ -308,18 +332,25 @@ input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
     </div>
   </div>
   <div class="header-actions">
-    <div id="exportCounterBadge" class="export-badge">مجاني: 3/3</div>
-    <button class="btn-signin" id="btnAuth" onclick="openAuthModal()">🔑 دخول</button>
-    <a href="https://whop.com/google-390e/piximax-ai-ultra/" target="_blank" class="badge-pro" id="btnUpgrade">PRO 4K⚡</a>
+    <select id="langSelect" class="btn-lang" onchange="changeLanguage(this.value)">
+      <option value="en">🌐 EN</option>
+      <option value="ar">🌐 AR</option>
+      <option value="fr">🌐 FR</option>
+      <option value="es">🌐 ES</option>
+      <option value="de">🌐 DE</option>
+    </select>
+    <div id="exportCounterBadge" class="export-badge">16/16 Free</div>
+    <button class="btn-signin" id="btnAuth" onclick="openAuthModal()">🔑 Login</button>
+    <a href="https://whop.com/google-390e/piximax-ai-ultra/" target="_blank" class="badge-pro" id="btnUpgrade">⚡ PRO 4K</a>
   </div>
 </div>
 
-<div class="nav-tabs">
-  <button class="tab-btn active" onclick="switchTab('objectTab', this)">🎯 إزالة العناصر</button>
-  <button class="tab-btn" onclick="switchTab('bgTab', this)">✂️ إزالة الخلفية</button>
-  <button class="tab-btn" onclick="switchTab('faceTab', this)">✨ رتوش الوجه</button>
-  <button class="tab-btn" onclick="switchTab('wmTab', this)">🧼 مسح العلامة</button>
-  <button class="tab-btn" onclick="switchTab('enhanceTab', this)">🔍 رفع الجودة</button>
+<div class="nav-tabs" id="navTabs">
+  <button class="tab-btn active" onclick="switchTab('objectTab', this)" id="tabObj">🎯 Object Remover</button>
+  <button class="tab-btn" onclick="switchTab('bgTab', this)" id="tabBg">✂️ BG Removal</button>
+  <button class="tab-btn" onclick="switchTab('faceTab', this)" id="tabFace">✨ Face Retouch</button>
+  <button class="tab-btn" onclick="switchTab('wmTab', this)" id="tabWM">🧼 Watermark Eraser</button>
+  <button class="tab-btn" onclick="switchTab('enhanceTab', this)" id="tabEnhance">🔍 Quality Enhancer</button>
 </div>
 
 <!-- TAB 1: OBJECT REMOVER -->
@@ -503,7 +534,64 @@ try {
   console.log("Firebase init standard fallback", e);
 }
 
+let currentLang = localStorage.getItem('piximax_lang') || 'en';
 let isProUser = localStorage.getItem('piximax_pro_auth') === 'true';
+
+const tabTranslations = {
+  en: {
+    obj: "🎯 Object Remover",
+    bg: "✂️ BG Removal",
+    face: "✨ Face Retouch",
+    wm: "🧼 Watermark Eraser",
+    enhance: "🔍 Quality Enhancer"
+  },
+  ar: {
+    obj: "🎯 إزالة العناصر",
+    bg: "✂️ إزالة الخلفية",
+    face: "✨ رتوش الوجه",
+    wm: "🧼 مسح العلامة",
+    enhance: "🔍 رفع الجودة"
+  },
+  fr: {
+    obj: "🎯 Effacer Objets",
+    bg: "✂️ Supprimer Fond",
+    face: "✨ Retouche Visage",
+    wm: "🧼 Effacer Filigrane",
+    enhance: "🔍 Améliorer Qualité"
+  },
+  es: {
+    obj: "🎯 Eliminar Objetos",
+    bg: "✂️ Quitar Fondo",
+    face: "✨ Retoque Facial",
+    wm: "🧼 Borrar Marca",
+    enhance: "🔍 Mejorar Calidad"
+  },
+  de: {
+    obj: "🎯 Objekte Entfernen",
+    bg: "✂️ Hintergr. Entfernen",
+    face: "✨ Retusche Gesicht",
+    wm: "🧼 Wasserzeichen",
+    enhance: "🔍 Qualität Erhöhen"
+  }
+};
+
+function updateTabTitles() {
+  const t = tabTranslations[currentLang] || tabTranslations.en;
+  if (document.getElementById('tabObj')) document.getElementById('tabObj').innerText = t.obj;
+  if (document.getElementById('tabBg')) document.getElementById('tabBg').innerText = t.bg;
+  if (document.getElementById('tabFace')) document.getElementById('tabFace').innerText = t.face;
+  if (document.getElementById('tabWM')) document.getElementById('tabWM').innerText = t.wm;
+  if (document.getElementById('tabEnhance')) document.getElementById('tabEnhance').innerText = t.enhance;
+}
+
+function changeLanguage(langCode) {
+  currentLang = langCode;
+  localStorage.setItem('piximax_lang', langCode);
+  document.documentElement.lang = langCode;
+  document.documentElement.dir = langCode === 'ar' ? 'rtl' : 'ltr';
+  updateTabTitles();
+  updateExportCounterUI();
+}
 let currentUser = null;
 let origObjImg = null, origBgImg = null, origFaceImg = null, origWMImg = null, origEnhanceImg = null;
 let currentEnhanceRatio = 'original';
@@ -612,13 +700,13 @@ function updateExportCounterUI() {
   const badge = document.getElementById('exportCounterBadge');
   if (!badge) return;
   if (isProUser) {
-    badge.innerText = 'غير محدود 👑';
+    badge.innerText = currentLang === 'ar' ? 'غير محدود 👑' : 'Unlimited 👑';
     badge.style.borderColor = 'var(--gold-pro)';
     badge.style.color = 'var(--gold-pro)';
   } else {
     const used = getDailyExports();
-    const remaining = Math.max(0, 3 - used);
-    badge.innerText = `متبقي: ${remaining}/3`;
+    const remaining = Math.max(0, 16 - used);
+    badge.innerText = currentLang === 'ar' ? `مجاني: ${remaining}/16` : `${remaining}/16 Free`;
     badge.style.borderColor = remaining > 0 ? 'var(--accent-cyan)' : '#ff4444';
     badge.style.color = remaining > 0 ? 'var(--accent-cyan)' : '#ff4444';
   }
@@ -630,7 +718,7 @@ function checkAndProcessExport(callback) {
     return;
   }
   const used = getDailyExports();
-  if (used >= 3) {
+  if (used >= 16) {
     window.open("https://whop.com/google-390e/piximax-ai-ultra/", "_blank");
     openAuthModal();
     return;
@@ -648,6 +736,14 @@ function checkAndProcessExport(callback) {
 }
 
 function initAuthState() {
+  const langSelect = document.getElementById('langSelect');
+  if (langSelect) {
+    langSelect.value = currentLang;
+  }
+  document.documentElement.lang = currentLang;
+  document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+  updateTabTitles();
+
   if (isProUser) {
     document.getElementById('btnAuth').innerText = 'PRO 👑';
     document.getElementById('btnAuth').classList.add('authenticated');
