@@ -71,18 +71,18 @@ jobs:
           rm -rf android-app/app/build
 
 
-      - name: Build debug APK
+      - name: Build release APK
 
         working-directory: android-app
 
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleRelease --stacktrace --no-daemon
 
 
       - name: Verify APK
 
         run: |
 
-          APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
+          APK_PATH="android-app/app/build/outputs/apk/release/app-release.apk"
 
 
           if [ ! -f "$APK_PATH" ]; then
@@ -105,9 +105,9 @@ jobs:
 
         with:
 
-          name: Generated-Android-APK
+          name: app-release.apk
 
-          path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          path: android-app/app/build/outputs/apk/release/app-release.apk
 
           if-no-files-found: error
 
