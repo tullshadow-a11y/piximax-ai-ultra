@@ -13,7 +13,9 @@ object ExportManager {
     private const val PREFS_NAME = "piximax_prefs"
     private const val KEY_EXPORT_DATE = "piximax_export_date"
     private const val KEY_EXPORT_COUNT = "piximax_export_count"
-    const val MAX_FREE_DAILY_EXPORTS = 16
+    private const val KEY_V10_RESET = "piximax_v10_reset"
+    const val MAX_FREE_DAILY_EXPORTS = 10
+    const val MAX_DAILY_LIMIT = 10
 
     private val usageUpdateTrigger = mutableStateOf(0)
 
@@ -27,8 +29,19 @@ object ExportManager {
 
     fun getDailyExportsUsed(context: Context): Int {
         val prefs = getPrefs(context)
-        val savedDate = prefs.getString(KEY_EXPORT_DATE, "")
         val today = getTodayDateString()
+
+        // Force reset/clear older cached usage counters on initial v10 startup
+        if (!prefs.getBoolean(KEY_V10_RESET, false)) {
+            prefs.edit()
+                .putString(KEY_EXPORT_DATE, today)
+                .putInt(KEY_EXPORT_COUNT, 0)
+                .putBoolean(KEY_V10_RESET, true)
+                .apply()
+            return 0
+        }
+
+        val savedDate = prefs.getString(KEY_EXPORT_DATE, "")
         return if (savedDate != today) {
             prefs.edit()
                 .putString(KEY_EXPORT_DATE, today)
@@ -82,7 +95,7 @@ object ExportManager {
             "fr" -> "$remaining/$MAX_FREE_DAILY_EXPORTS Gratuit"
             "es" -> "$remaining/$MAX_FREE_DAILY_EXPORTS Gratis"
             "de" -> "$remaining/$MAX_FREE_DAILY_EXPORTS Frei"
-            else -> "مجاني: $remaining/$MAX_FREE_DAILY_EXPORTS"
+            else -> "$remaining/$MAX_FREE_DAILY_EXPORTS مجاني"
         }
     }
 }

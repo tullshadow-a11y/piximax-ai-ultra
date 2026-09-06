@@ -377,11 +377,11 @@ object LanguageManager {
             "de" to "Zeichnen Sie zuerst über das zu löschende Objekt!"
         ),
         "toast_limit_reached" to mapOf(
-            "ar" to "وصلت للحد اليومي المجاني (16 استخدام). اشترك في Whop Pro للوصول غير المحدود!",
-            "en" to "Daily free limit reached (16 uses). Subscribe to Whop Pro for unlimited access!",
-            "fr" to "Limite quotidienne gratuite atteinte (16 utilisations). Abonnez-vous à Whop Pro pour un accès illimité!",
-            "es" to "Límite diario gratuito alcanzado (16 usos). ¡Suscríbase a Whop Pro para acceso ilimitado!",
-            "de" to "Tägliches kostenloses Limit erreicht (16 Nutzungen). Abonnieren Sie Whop Pro für unbegrenzten Zugriff!"
+            "ar" to "وصلت للحد اليومي المجاني (10 استخدامات). اشترك في Whop Pro للوصول غير المحدود!",
+            "en" to "Daily free limit reached (10 uses). Subscribe to Whop Pro for unlimited access!",
+            "fr" to "Limite quotidienne gratuite atteinte (10 utilisations). Abonnez-vous à Whop Pro pour un accès illimité!",
+            "es" to "Límite diario gratuito alcanzado (10 usos). ¡Suscríbase a Whop Pro para acceso ilimitado!",
+            "de" to "Tägliches kostenloses Limit erreicht (10 Nutzungen). Abonnieren Sie Whop Pro für unbegrenzten Zugriff!"
         ),
         "toast_success_saved" to mapOf(
             "ar" to "تم الحفظ! ✨",
