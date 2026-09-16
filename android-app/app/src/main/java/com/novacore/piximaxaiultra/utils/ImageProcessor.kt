@@ -467,6 +467,59 @@ object ImageProcessor {
     }
 
     /**
+     * Crops a bitmap according to specified aspect ratio preset ("1:1", "4:3", "16:9", "freeform").
+     */
+    fun cropBitmap(bitmap: Bitmap, ratio: String): Bitmap {
+        val originalW = bitmap.width
+        val originalH = bitmap.height
+
+        var targetW = originalW
+        var targetH = originalH
+
+        when (ratio) {
+            "1:1" -> {
+                val side = Math.min(originalW, originalH)
+                targetW = side
+                targetH = side
+            }
+            "4:3" -> {
+                if (originalW * 3 > originalH * 4) {
+                    targetH = originalH
+                    targetW = (originalH * 4) / 3
+                } else {
+                    targetW = originalW
+                    targetH = (originalW * 3) / 4
+                }
+            }
+            "16:9" -> {
+                if (originalW * 9 > originalH * 16) {
+                    targetH = originalH
+                    targetW = (originalH * 16) / 9
+                } else {
+                    targetW = originalW
+                    targetH = (originalW * 9) / 16
+                }
+            }
+            "freeform" -> {
+                targetW = (originalW * 0.8f).toInt()
+                targetH = (originalH * 0.8f).toInt()
+            }
+        }
+
+        val startX = ((originalW - targetW) / 2).coerceAtLeast(0)
+        val startY = ((originalH - targetH) / 2).coerceAtLeast(0)
+        val cropW = targetW.coerceAtMost(originalW - startX)
+        val cropH = targetH.coerceAtMost(originalH - startY)
+
+        return try {
+            Bitmap.createBitmap(bitmap, startX, startY, cropW, cropH)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            bitmap
+        }
+    }
+
+    /**
      * Rotates a bitmap by a specified angle and flips it horizontally if requested.
      */
     fun rotateAndFlip(src: Bitmap, degrees: Int, flipHorizontal: Boolean): Bitmap {
