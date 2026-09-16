@@ -40,6 +40,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun RotateScreen(isProUser: Boolean = false) {
     val context = LocalContext.current
+    val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
     val coroutineScope = rememberCoroutineScope()
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -49,6 +50,7 @@ fun RotateScreen(isProUser: Boolean = false) {
     var rotationDegrees by remember { mutableStateOf(0) }
     var flipHorizontal by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
+    var showCropDialog by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -101,7 +103,7 @@ fun RotateScreen(isProUser: Boolean = false) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "🔄 اختر صورة لتدويرها أو عكسها اتجاهياً",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("rotate_upload_prompt", currentLang),
                     color = AccentBlue,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -125,13 +127,13 @@ fun RotateScreen(isProUser: Boolean = false) {
             if (processedBitmap != null) {
                 Image(
                     bitmap = processedBitmap!!.asImageBitmap(),
-                    contentDescription = "Rotate Preview",
+                    contentDescription = com.novacore.piximaxaiultra.utils.LanguageManager.getString("rotate_preview", currentLang),
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
                 )
             } else {
                 Text(
-                    text = "لم يتم اختيار صورة بعد",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("no_image_selected", currentLang),
                     color = TextSub,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center
@@ -169,7 +171,25 @@ fun RotateScreen(isProUser: Boolean = false) {
                 border = BorderStroke(1.dp, BorderColor)
             ) {
                 Text(
-                    text = "↻ تدوير 90°",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_rotate_90"),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Crop Button
+            Button(
+                onClick = { showCropDialog = true },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0F1624),
+                    contentColor = TextMain
+                ),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, BorderColor)
+            ) {
+                Text(
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_crop_image"),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -187,11 +207,59 @@ fun RotateScreen(isProUser: Boolean = false) {
                 border = BorderStroke(1.dp, BorderColor)
             ) {
                 Text(
-                    text = "↔ انعكاس أفقي",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_flip_horizontal"),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
+        }
+
+        if (showCropDialog) {
+            AlertDialog(
+                onDismissRequest = { showCropDialog = false },
+                containerColor = CardBg,
+                title = {
+                    Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("crop_dialog_title"), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("crop_dialog_desc"), color = TextSub, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        val presets = listOf(
+                            "1:1" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("ratio_1_1"),
+                            "4:3" to "4:3",
+                            "16:9" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("ratio_16_9"),
+                            "freeform" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("crop_freeform")
+                        )
+                        presets.forEach { (ratioKey, ratioLabel) ->
+                            Button(
+                                onClick = {
+                                    showCropDialog = false
+                                    val curr = originalBitmap ?: return@Button
+                                    isProcessing = true
+                                    coroutineScope.launch {
+                                        val cropped = withContext(Dispatchers.Default) {
+                                            ImageProcessor.cropBitmap(curr, ratioKey)
+                                        }
+                                        originalBitmap = cropped
+                                        isProcessing = false
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B))
+                            ) {
+                                Text(ratioLabel, color = Color.White, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showCropDialog = false }) {
+                        Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_cancel"), color = TextSub)
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -201,23 +269,23 @@ fun RotateScreen(isProUser: Boolean = false) {
             onClick = {
                 val outBmp = processedBitmap
                 if (outBmp == null) {
-                    Toast.makeText(context, "اختر صورة أولاً!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_select_first", currentLang), Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 if (!ExportManager.canExport(context, isProUser)) {
                     val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("https://whop.com/google-390e/piximax-ai-ultra/"))
                     context.startActivity(intent)
-                    Toast.makeText(context, "وصلت للحد اليومي المجاني (3 تصديرات). اشترك في Whop Pro للتصدير غير المحدود!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_limit_reached", currentLang), Toast.LENGTH_LONG).show()
                     return@Button
                 }
                 ExportManager.recordExportAndShowAd(context, isProUser)
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_Edited_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
-                    Toast.makeText(context, "تم الحفظ! ✨", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_success_saved", currentLang), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(context, "فشل حفظ الملف", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier
@@ -234,7 +302,7 @@ fun RotateScreen(isProUser: Boolean = false) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "💾 تصدير الصورة المعدلة",
+                    text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_save_clean_image", currentLang),
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold

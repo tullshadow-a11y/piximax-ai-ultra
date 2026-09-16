@@ -153,10 +153,11 @@ class MainActivity : ComponentActivity() {
                                         com.novacore.piximaxaiultra.utils.DraftManager.clearDraft(this@MainActivity)
                                     }
                                 )
-                                1 -> BgRemovalScreen(isProUser)
-                                2 -> FaceRetouchScreen(isProUser)
-                                3 -> WatermarkScreen(isProUser)
-                                4 -> EnhanceScreen(isProUser)
+                                1 -> RotateScreen(isProUser)
+                                2 -> BgRemovalScreen(isProUser)
+                                3 -> FaceRetouchScreen(isProUser)
+                                4 -> WatermarkScreen(isProUser)
+                                5 -> EnhanceScreen(isProUser)
                             }
                         }
 
@@ -398,6 +399,7 @@ fun NavigationTabs(
     ) {
         val tabs = listOf(
             com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_object_remover"),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_crop_rotate"),
             com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_bg_removal"),
             com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_face_retouch"),
             com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_watermark"),
