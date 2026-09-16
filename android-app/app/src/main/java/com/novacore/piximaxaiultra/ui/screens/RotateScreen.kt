@@ -262,7 +262,7 @@ fun RotateScreen(isProUser: Boolean = false) {
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Export/Save Button
         Button(

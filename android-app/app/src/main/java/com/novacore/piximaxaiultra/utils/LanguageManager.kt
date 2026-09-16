@@ -28,7 +28,9 @@ object LanguageManager {
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val savedLang = prefs.getString(KEY_LANG, "en") ?: "en"
+        val defaultSystemLang = java.util.Locale.getDefault().language
+        val initialLang = if (supportedLanguages.any { it.code == defaultSystemLang }) defaultSystemLang else "en"
+        val savedLang = prefs.getString(KEY_LANG, initialLang) ?: initialLang
         _currentLang.value = savedLang
     }
 
