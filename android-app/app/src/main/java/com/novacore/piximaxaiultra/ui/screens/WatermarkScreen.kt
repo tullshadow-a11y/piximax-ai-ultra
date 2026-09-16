@@ -355,7 +355,7 @@ fun WatermarkScreen(isProUser: Boolean = false) {
                         }
                         processedBitmap = result
                         originalBitmap = result
-                        Toast.makeText(context, "Done! ✨", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_watermark_done", currentLang), Toast.LENGTH_LONG).show()
                     } catch (e: Throwable) {
                         e.printStackTrace()
                     } finally {

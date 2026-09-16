@@ -118,7 +118,7 @@ fun RotateScreen(isProUser: Boolean = false) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(260.dp)
+                .height(280.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .border(1.dp, BorderColor, RoundedCornerShape(10.dp))
                 .background(Color.Black),
@@ -228,7 +228,9 @@ fun RotateScreen(isProUser: Boolean = false) {
                         val presets = listOf(
                             "1:1" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("ratio_1_1"),
                             "4:3" to "4:3",
+                            "3:4" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("ratio_3_4"),
                             "16:9" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("ratio_16_9"),
+                            "9:16" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("ratio_9_16"),
                             "freeform" to com.novacore.piximaxaiultra.utils.LanguageManager.getString("crop_freeform")
                         )
                         presets.forEach { (ratioKey, ratioLabel) ->

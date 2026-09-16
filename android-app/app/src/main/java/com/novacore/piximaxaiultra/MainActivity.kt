@@ -533,7 +533,7 @@ fun ProAuthDialog(
                                         .addOnFailureListener { err ->
                                             context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
                                                 .edit().putBoolean("piximax_pro_auth", false).apply()
-                                            android.widget.Toast.makeText(context, err.localizedMessage ?: "Login failed", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(context, err.localizedMessage ?: com.novacore.piximaxaiultra.utils.LanguageManager.getString("login_failed"), android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                 } catch (e: Exception) {
                                     context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
@@ -542,7 +542,7 @@ fun ProAuthDialog(
                             } else {
                                 context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
                                     .edit().putBoolean("piximax_pro_auth", false).apply()
-                                android.widget.Toast.makeText(context, "Invalid email / password", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("invalid_email_pass"), android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -567,7 +567,7 @@ fun ProAuthDialog(
                                         .addOnFailureListener { err ->
                                             context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
                                                 .edit().putBoolean("piximax_pro_auth", false).apply()
-                                            android.widget.Toast.makeText(context, err.localizedMessage ?: "Registration failed", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(context, err.localizedMessage ?: com.novacore.piximaxaiultra.utils.LanguageManager.getString("registration_failed"), android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                 } catch (e: Exception) {
                                     context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
@@ -576,7 +576,7 @@ fun ProAuthDialog(
                             } else {
                                 context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
                                     .edit().putBoolean("piximax_pro_auth", false).apply()
-                                android.widget.Toast.makeText(context, "Invalid email / password", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("invalid_email_pass"), android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.weight(1f),

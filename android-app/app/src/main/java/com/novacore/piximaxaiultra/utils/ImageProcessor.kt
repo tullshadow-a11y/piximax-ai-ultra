@@ -491,6 +491,15 @@ object ImageProcessor {
                     targetH = (originalW * 3) / 4
                 }
             }
+            "3:4" -> {
+                if (originalW * 4 > originalH * 3) {
+                    targetH = originalH
+                    targetW = (originalH * 3) / 4
+                } else {
+                    targetW = originalW
+                    targetH = (originalW * 4) / 3
+                }
+            }
             "16:9" -> {
                 if (originalW * 9 > originalH * 16) {
                     targetH = originalH
@@ -498,6 +507,15 @@ object ImageProcessor {
                 } else {
                     targetW = originalW
                     targetH = (originalW * 9) / 16
+                }
+            }
+            "9:16" -> {
+                if (originalW * 16 > originalH * 9) {
+                    targetH = originalH
+                    targetW = (originalH * 9) / 16
+                } else {
+                    targetW = originalW
+                    targetH = (originalW * 16) / 9
                 }
             }
             "freeform" -> {
