@@ -22,4 +22,10 @@
     <string name="tool_eraser">Eraser</string>
     <string name="tool_restore">Restore</string>
     <string name="select_image_hint">Brush over the objects you want to remove</string>
+    <string name="toast_failed_load">Failed to load image</string>
+    <string name="toast_process_error">Error processing image</string>
+    <string name="toast_watermark_done">Watermark erased! ✨</string>
+    <string name="invalid_email_pass">Invalid email / password</string>
+    <string name="login_failed">Login failed</string>
+    <string name="registration_failed">Registration failed</string>
 </resources>

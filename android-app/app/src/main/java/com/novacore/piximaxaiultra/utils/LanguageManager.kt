@@ -28,9 +28,7 @@ object LanguageManager {
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val defaultSystemLang = java.util.Locale.getDefault().language
-        val initialLang = if (supportedLanguages.any { it.code == defaultSystemLang }) defaultSystemLang else "en"
-        val savedLang = prefs.getString(KEY_LANG, initialLang) ?: initialLang
+        val savedLang = prefs.getString(KEY_LANG, "en") ?: "en"
         _currentLang.value = savedLang
     }
 
@@ -92,11 +90,11 @@ object LanguageManager {
             "de" to "🎯 Objekte Entfernen"
         ),
         "tab_crop_rotate" to mapOf(
-            "ar" to "📐 قص وتدوير",
-            "en" to "📐 Crop & Rotate",
-            "fr" to "📐 Rogner & Tourner",
-            "es" to "📐 Recortar y Rotar",
-            "de" to "📐 Zuschneiden & Drehen"
+            "ar" to "🔄 قص وتدوير",
+            "en" to "🔄 Crop & Rotate",
+            "fr" to "🔄 Rogner & Tourner",
+            "es" to "🔄 Recortar y Rotar",
+            "de" to "🔄 Zuschneiden & Drehen"
         ),
         "tab_bg_removal" to mapOf(
             "ar" to "✂️ إزالة الخلفية",
@@ -428,6 +426,48 @@ object LanguageManager {
             "fr" to "Échec de l'enregistrement",
             "es" to "Error al guardar el archivo",
             "de" to "Fehler beim Speichern der Datei"
+        ),
+        "toast_failed_load" to mapOf(
+            "ar" to "فشل تحميل الصورة",
+            "en" to "Failed to load image",
+            "fr" to "Échec du chargement de l'image",
+            "es" to "Error al cargar la imagen",
+            "de" to "Fehler beim Laden des Bildes"
+        ),
+        "toast_process_error" to mapOf(
+            "ar" to "حدث خطأ أثناء معالجة الصورة",
+            "en" to "Error processing image",
+            "fr" to "Erreur lors du traitement de l'image",
+            "es" to "Error al procesar la imagen",
+            "de" to "Fehler bei der Bildverarbeitung"
+        ),
+        "toast_watermark_done" to mapOf(
+            "ar" to "تم مسح العلامة المائية! ✨",
+            "en" to "Watermark erased! ✨",
+            "fr" to "Filigrane effacé! ✨",
+            "es" to "¡Marca de agua borrada! ✨",
+            "de" to "Wasserzeichen gelöscht! ✨"
+        ),
+        "invalid_email_pass" to mapOf(
+            "ar" to "البريد الإلكتروني أو كلمة المرور غير صالحة",
+            "en" to "Invalid email / password",
+            "fr" to "E-mail ou mot de passe non valide",
+            "es" to "Correo o contraseña no válidos",
+            "de" to "Ungültige E-Mail / Passwort"
+        ),
+        "login_failed" to mapOf(
+            "ar" to "فشل تسجيل الدخول",
+            "en" to "Login failed",
+            "fr" to "Échec de la connexion",
+            "es" to "Error al iniciar sesión",
+            "de" to "Anmeldung fehlgeschlagen"
+        ),
+        "registration_failed" to mapOf(
+            "ar" to "فشل التسجيل",
+            "en" to "Registration failed",
+            "fr" to "Échec de l'inscription",
+            "es" to "Error al registrarse",
+            "de" to "Registrierung fehlgeschlagen"
         )
     )
 }

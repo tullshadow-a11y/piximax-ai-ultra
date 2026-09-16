@@ -139,6 +139,7 @@ fun BeforeAfterSlider(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ObjectRemoverScreen(
     isProUser: Boolean = false,
@@ -212,7 +213,7 @@ fun ObjectRemoverScreen(
                     redrawSignal++
                 } catch (e: Throwable) {
                     e.printStackTrace()
-                    Toast.makeText(context, "فشل تحميل الصورة", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_load", currentLang), Toast.LENGTH_SHORT).show()
                 } finally {
                     isProcessing = false
                 }
@@ -499,12 +500,26 @@ fun ObjectRemoverScreen(
                 value = brushSizeDp,
                 onValueChange = { brushSizeDp = it },
                 valueRange = 10f..80f,
-                modifier = Modifier.height(28.dp),
-                colors = SliderDefaults.colors(
-                    thumbColor = AccentBlue,
-                    activeTrackColor = AccentBlue,
-                    inactiveTrackColor = BorderColor.copy(alpha = 0.5f)
-                )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(20.dp),
+                thumb = {
+                    SliderDefaults.Thumb(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        thumbSize = androidx.compose.ui.unit.DpSize(12.dp, 12.dp),
+                        colors = SliderDefaults.colors(thumbColor = AccentCyan)
+                    )
+                },
+                track = { sliderState ->
+                    SliderDefaults.Track(
+                        sliderState = sliderState,
+                        modifier = Modifier.height(4.dp),
+                        colors = SliderDefaults.colors(
+                            activeTrackColor = AccentCyan,
+                            inactiveTrackColor = BorderColor.copy(alpha = 0.5f)
+                        )
+                    )
+                }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -616,7 +631,7 @@ fun ObjectRemoverScreen(
                         Toast.makeText(context, context.getString(com.novacore.piximaxaiultra.R.string.msg_object_removed), Toast.LENGTH_LONG).show()
                     } catch (e: Throwable) {
                         e.printStackTrace()
-                        Toast.makeText(context, "حدث خطأ أثناء معالجة الصورة", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_process_error", currentLang), Toast.LENGTH_SHORT).show()
                     } finally {
                         isProcessing = false
                     }
