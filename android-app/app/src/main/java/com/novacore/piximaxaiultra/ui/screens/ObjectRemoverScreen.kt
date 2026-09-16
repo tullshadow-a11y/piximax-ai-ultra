@@ -24,17 +24,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.novacore.piximaxaiultra.ui.theme.*
+import com.novacore.piximaxaiultra.utils.BrushSoundManager
 import com.novacore.piximaxaiultra.utils.ExportManager
 import com.novacore.piximaxaiultra.utils.ImageProcessor
 import com.novacore.piximaxaiultra.utils.ImageUtils
@@ -48,17 +53,118 @@ data class DrawnStroke(
 )
 
 @Composable
-fun ObjectRemoverScreen(isProUser: Boolean = false) {
+fun BeforeAfterSlider(
+    beforeBitmap: Bitmap,
+    afterBitmap: Bitmap,
+    modifier: Modifier = Modifier
+) {
+    var sliderPosition by remember { mutableFloatStateOf(0.5f) }
+
+    Box(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    if (size.width > 0) {
+                        sliderPosition = (sliderPosition + dragAmount.x / size.width.toFloat()).coerceIn(0f, 1f)
+                    }
+                }
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val canvasW = size.width
+            val canvasH = size.height
+            if (canvasW <= 0f || canvasH <= 0f) return@Canvas
+
+            val afterImage = afterBitmap.asImageBitmap()
+            drawImage(
+                image = afterImage,
+                dstSize = IntSize(canvasW.toInt(), canvasH.toInt())
+            )
+
+            val splitX = canvasW * sliderPosition
+            clipRect(left = 0f, top = 0f, right = splitX, bottom = canvasH) {
+                val beforeImage = beforeBitmap.asImageBitmap()
+                drawImage(
+                    image = beforeImage,
+                    dstSize = IntSize(canvasW.toInt(), canvasH.toInt())
+                )
+            }
+
+            drawLine(
+                color = Color.White,
+                start = Offset(splitX, 0f),
+                end = Offset(splitX, canvasH),
+                strokeWidth = 3.dp.toPx()
+            )
+
+            val handleRadius = 14.dp.toPx()
+            val handleCenter = Offset(splitX, canvasH / 2f)
+            drawCircle(
+                color = AccentCyan,
+                radius = handleRadius,
+                center = handleCenter
+            )
+            drawCircle(
+                color = Color.White,
+                radius = handleRadius * 0.7f,
+                center = handleCenter,
+                style = Stroke(width = 2.dp.toPx())
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color.Black.copy(alpha = 0.6f))
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Text(text = "قبل (Before)", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color.Black.copy(alpha = 0.6f))
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Text(text = "بعد (After)", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun ObjectRemoverScreen(
+    isProUser: Boolean = false,
+    initialUri: Uri? = null,
+    onUriChanged: (Uri?) -> Unit = {},
+    onDraftCleared: () -> Unit = {}
+) {
     val context = LocalContext.current
     val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val soundManager = remember(context) { BrushSoundManager(context) }
+    var isAudioFeedbackEnabled by remember { mutableStateOf(true) }
+
+    DisposableEffect(soundManager) {
+        onDispose {
+            soundManager.release()
+        }
+    }
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var initialOriginalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     var isProcessing by remember { mutableStateOf(false) }
+    var isComparisonActive by remember { mutableStateOf(false) }
 
     var brushSizeDp by remember { mutableStateOf(30f) }
     val strokeList = remember { mutableStateListOf<DrawnStroke>() }
@@ -75,20 +181,26 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
     ) { uri: Uri? ->
         if (uri != null) {
             selectedImageUri = uri
+            onUriChanged(uri)
             isProcessing = true
             coroutineScope.launch {
                 try {
                     val bmp = withContext(Dispatchers.IO) {
                         ImageUtils.loadBitmapFromUri(context, uri)
                     }
-                    if (originalBitmap != bmp) {
+                    if (initialOriginalBitmap != bmp && initialOriginalBitmap != originalBitmap && initialOriginalBitmap != processedBitmap) {
+                        ImageUtils.safeRecycle(initialOriginalBitmap)
+                    }
+                    if (originalBitmap != bmp && originalBitmap != processedBitmap) {
                         ImageUtils.safeRecycle(originalBitmap)
                     }
-                    if (processedBitmap != bmp && processedBitmap != originalBitmap) {
+                    if (processedBitmap != bmp) {
                         ImageUtils.safeRecycle(processedBitmap)
                     }
+                    initialOriginalBitmap = bmp
                     originalBitmap = bmp
                     processedBitmap = bmp
+                    isComparisonActive = false
                     strokeList.clear()
                     redrawSignal++
                 } catch (e: Throwable) {
@@ -97,6 +209,29 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                 } finally {
                     isProcessing = false
                 }
+            }
+        }
+    }
+
+    LaunchedEffect(initialUri) {
+        if (initialUri != null && originalBitmap == null) {
+            selectedImageUri = initialUri
+            isProcessing = true
+            try {
+                val bmp = withContext(Dispatchers.IO) {
+                    ImageUtils.loadBitmapFromUri(context, initialUri)
+                }
+                initialOriginalBitmap = bmp
+                originalBitmap = bmp
+                processedBitmap = bmp
+                isComparisonActive = false
+                strokeList.clear()
+                redrawSignal++
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                onDraftCleared()
+            } finally {
+                isProcessing = false
             }
         }
     }
@@ -168,56 +303,66 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
             contentAlignment = Alignment.Center
         ) {
             if (processedBitmap != null) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Image(
-                        bitmap = processedBitmap!!.asImageBitmap(),
-                        contentDescription = "Object Removal Preview",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
+                if (isComparisonActive && initialOriginalBitmap != null) {
+                    BeforeAfterSlider(
+                        beforeBitmap = initialOriginalBitmap!!,
+                        afterBitmap = processedBitmap!!,
+                        modifier = Modifier.fillMaxSize()
                     )
+                } else {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            bitmap = processedBitmap!!.asImageBitmap(),
+                            contentDescription = "Object Removal Preview",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
 
-                    // Finger Paint Touch Canvas Overlay with Low-Latency Redraw Signal
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .pointerInput(drawLeft, drawTop, drawW, drawH, brushSizeDp) {
-                                detectDragGestures(
-                                    onDragStart = { offset ->
-                                        if (drawW > 0f && drawH > 0f) {
-                                            val relX = (offset.x - drawLeft).coerceIn(0f, drawW)
-                                            val relY = (offset.y - drawTop).coerceIn(0f, drawH)
-                                            val newPath = Path().apply { moveTo(relX, relY) }
-                                            strokeList.add(DrawnStroke(newPath, brushSizeDp))
-                                            redrawSignal++
+                        // Finger Paint Touch Canvas Overlay with Low-Latency Redraw Signal
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pointerInput(drawLeft, drawTop, drawW, drawH, brushSizeDp) {
+                                    detectDragGestures(
+                                        onDragStart = { offset ->
+                                            if (drawW > 0f && drawH > 0f) {
+                                                val relX = (offset.x - drawLeft).coerceIn(0f, drawW)
+                                                val relY = (offset.y - drawTop).coerceIn(0f, drawH)
+                                                val newPath = Path().apply { moveTo(relX, relY) }
+                                                strokeList.add(DrawnStroke(newPath, brushSizeDp))
+                                                redrawSignal++
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            soundManager.playBrushStrokeSound(isAudioFeedbackEnabled)
+                                            }
+                                        },
+                                        onDrag = { change, _ ->
+                                            change.consume()
+                                            if (drawW > 0f && drawH > 0f) {
+                                                val offset = change.position
+                                                val relX = (offset.x - drawLeft).coerceIn(0f, drawW)
+                                                val relY = (offset.y - drawTop).coerceIn(0f, drawH)
+                                                strokeList.lastOrNull()?.path?.lineTo(relX, relY)
+                                                redrawSignal++
+                                            }
                                         }
-                                    },
-                                    onDrag = { change, _ ->
-                                        change.consume()
-                                        if (drawW > 0f && drawH > 0f) {
-                                            val offset = change.position
-                                            val relX = (offset.x - drawLeft).coerceIn(0f, drawW)
-                                            val relY = (offset.y - drawTop).coerceIn(0f, drawH)
-                                            strokeList.lastOrNull()?.path?.lineTo(relX, relY)
-                                            redrawSignal++
-                                        }
-                                    }
-                                )
-                            }
-                    ) {
-                        @Suppress("UNUSED_VARIABLE")
-                        val dummy = redrawSignal // Observe redrawSignal for low-latency invalidation
-                        translate(left = drawLeft, top = drawTop) {
-                            strokeList.forEach { stroke ->
-                                val strokePx = stroke.strokeWidthDp * density.density
-                                drawPath(
-                                    path = stroke.path,
-                                    color = AccentCyan.copy(alpha = 0.45f),
-                                    style = Stroke(
-                                        width = strokePx,
-                                        cap = StrokeCap.Round,
-                                        join = StrokeJoin.Round
                                     )
-                                )
+                                }
+                        ) {
+                            @Suppress("UNUSED_VARIABLE")
+                            val dummy = redrawSignal // Observe redrawSignal for low-latency invalidation
+                            translate(left = drawLeft, top = drawTop) {
+                                strokeList.forEach { stroke ->
+                                    val strokePx = stroke.strokeWidthDp * density.density
+                                    drawPath(
+                                        path = stroke.path,
+                                        color = AccentCyan.copy(alpha = 0.45f),
+                                        style = Stroke(
+                                            width = strokePx,
+                                            cap = StrokeCap.Round,
+                                            join = StrokeJoin.Round
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
@@ -240,6 +385,27 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                 ) {
                     CircularProgressIndicator(color = AccentBlue)
                 }
+            }
+        }
+
+        if (initialOriginalBitmap != null && processedBitmap != null && processedBitmap != initialOriginalBitmap) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
+                    selected = !isComparisonActive,
+                    onClick = { isComparisonActive = false },
+                    label = { Text("وضع الفرشاة 🖌️", fontSize = 11.sp) }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                FilterChip(
+                    selected = isComparisonActive,
+                    onClick = { isComparisonActive = true },
+                    label = { Text("مقارنة قبل / بعد ↔", fontSize = 11.sp) }
+                )
             }
         }
 
@@ -277,6 +443,26 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                 valueRange = 10f..80f,
                 colors = SliderDefaults.colors(thumbColor = AccentBlue, activeTrackColor = AccentBlue, inactiveTrackColor = BorderColor)
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "صوت الفرشاة 🔊", color = TextSub, fontSize = 11.sp)
+                Switch(
+                    checked = isAudioFeedbackEnabled,
+                    onCheckedChange = { isAudioFeedbackEnabled = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AccentCyan,
+                        checkedTrackColor = AccentBlue.copy(alpha = 0.5f),
+                        uncheckedThumbColor = BorderColor,
+                        uncheckedTrackColor = Color.Transparent
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -355,14 +541,15 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
                             res
                         }
 
-                        if (processedBitmap != result && processedBitmap != originalBitmap) {
+                        if (processedBitmap != result && processedBitmap != originalBitmap && processedBitmap != initialOriginalBitmap) {
                             ImageUtils.safeRecycle(processedBitmap)
                         }
                         processedBitmap = result
                         originalBitmap = result
+                        isComparisonActive = true
                         strokeList.clear()
                         redrawSignal++
-                        Toast.makeText(context, "تم مسح وإزالة العنصر بنجاح! ✨", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, context.getString(com.novacore.piximaxaiultra.R.string.msg_object_removed), Toast.LENGTH_LONG).show()
                     } catch (e: Throwable) {
                         e.printStackTrace()
                         Toast.makeText(context, "حدث خطأ أثناء معالجة الصورة", Toast.LENGTH_SHORT).show()
@@ -397,6 +584,7 @@ fun ObjectRemoverScreen(isProUser: Boolean = false) {
 
                 val savedUri = ImageUtils.saveBitmapToGallery(context, outBmp, "PixiMax_ObjectRemoved_${System.currentTimeMillis()}.png")
                 if (savedUri != null) {
+                    onDraftCleared()
                     Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_success_saved", currentLang), Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(context, com.novacore.piximaxaiultra.utils.LanguageManager.getString("toast_failed_save", currentLang), Toast.LENGTH_SHORT).show()

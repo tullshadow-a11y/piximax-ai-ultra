@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PixiMax AI Ultra</string>
+    <string name="error_invalid_whop_key">رمز Whop Pro غير صالح</string>
+    <string name="msg_object_removed">تم مسح وإزالة العنصر ✨</string>
 </resources>
