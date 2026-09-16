@@ -388,6 +388,7 @@ fun NavigationTabs(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit
 ) {
+    val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
     val scrollState = rememberScrollState()
     Row(
         modifier = Modifier
@@ -398,12 +399,12 @@ fun NavigationTabs(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val tabs = listOf(
-            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_object_remover"),
-            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_crop_rotate"),
-            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_bg_removal"),
-            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_face_retouch"),
-            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_watermark"),
-            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_enhance")
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_object_remover", currentLang),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_crop_rotate", currentLang),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_bg_removal", currentLang),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_face_retouch", currentLang),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_watermark", currentLang),
+            com.novacore.piximaxaiultra.utils.LanguageManager.getString("tab_enhance", currentLang)
         )
 
         tabs.forEachIndexed { index, title ->

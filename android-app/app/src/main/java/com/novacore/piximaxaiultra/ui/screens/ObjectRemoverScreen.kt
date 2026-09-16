@@ -478,14 +478,14 @@ fun ObjectRemoverScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Brush Controls
+        // Brush Controls (Sleek, Refined & Minimal Layout)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(CardBg)
-                .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-                .padding(14.dp)
+                .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -493,13 +493,18 @@ fun ObjectRemoverScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("brush_size", currentLang), color = TextSub, fontSize = 11.sp)
-                Text(text = "${brushSizeDp.toInt()} px", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(text = "${brushSizeDp.toInt()} px", color = AccentCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Slider(
                 value = brushSizeDp,
                 onValueChange = { brushSizeDp = it },
                 valueRange = 10f..80f,
-                colors = SliderDefaults.colors(thumbColor = AccentBlue, activeTrackColor = AccentBlue, inactiveTrackColor = BorderColor)
+                modifier = Modifier.height(28.dp),
+                colors = SliderDefaults.colors(
+                    thumbColor = AccentBlue,
+                    activeTrackColor = AccentBlue,
+                    inactiveTrackColor = BorderColor.copy(alpha = 0.5f)
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
