@@ -114,6 +114,7 @@ fun BeforeAfterSlider(
             )
         }
 
+        val currentLang = com.novacore.piximaxaiultra.utils.LanguageManager.currentLang.value
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -122,7 +123,7 @@ fun BeforeAfterSlider(
                 .background(Color.Black.copy(alpha = 0.6f))
                 .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
-            Text(text = "قبل (Before)", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("before_label", currentLang), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
 
         Box(
@@ -133,7 +134,7 @@ fun BeforeAfterSlider(
                 .background(Color.Black.copy(alpha = 0.6f))
                 .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
-            Text(text = "بعد (After)", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("after_label", currentLang), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -166,7 +167,6 @@ fun ObjectRemoverScreen(
 
     var isProcessing by remember { mutableStateOf(false) }
     var isComparisonActive by remember { mutableStateOf(false) }
-    var showCropDialog by remember { mutableStateOf(false) }
 
     val undoStack = remember { mutableStateListOf<Bitmap>() }
     val redoStack = remember { mutableStateListOf<Bitmap>() }
@@ -405,13 +405,13 @@ fun ObjectRemoverScreen(
                 FilterChip(
                     selected = !isComparisonActive,
                     onClick = { isComparisonActive = false },
-                    label = { Text("وضع الفرشاة 🖌️", fontSize = 11.sp) }
+                    label = { Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("mode_brush", currentLang), fontSize = 11.sp) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 FilterChip(
                     selected = isComparisonActive,
                     onClick = { isComparisonActive = true },
-                    label = { Text("مقارنة قبل / بعد ↔", fontSize = 11.sp) }
+                    label = { Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("mode_compare", currentLang), fontSize = 11.sp) }
                 )
             }
         }
@@ -427,106 +427,6 @@ fun ObjectRemoverScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Quick Edit Action Row: Rotate 90° & Crop
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = {
-                    val curr = processedBitmap ?: return@Button
-                    isProcessing = true
-                    coroutineScope.launch {
-                        val rotated = withContext(Dispatchers.Default) {
-                            ImageProcessor.rotateAndFlip(curr, 90, false)
-                        }
-                        if (initialOriginalBitmap != null) {
-                            val rotatedInit = withContext(Dispatchers.Default) {
-                                ImageProcessor.rotateAndFlip(initialOriginalBitmap!!, 90, false)
-                            }
-                            initialOriginalBitmap = rotatedInit
-                        }
-                        undoStack.add(curr)
-                        redoStack.clear()
-                        originalBitmap = rotated
-                        processedBitmap = rotated
-                        strokeList.clear()
-                        redrawSignal++
-                        isProcessing = false
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F1624)),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, BorderColor)
-            ) {
-                Text("↻ تدوير 90°", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = { showCropDialog = true },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F1624)),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, BorderColor)
-            ) {
-                Text("✂️ قص الصورة", color = TextMain, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        if (showCropDialog) {
-            AlertDialog(
-                onDismissRequest = { showCropDialog = false },
-                containerColor = CardBg,
-                title = {
-                    Text("قص الصورة (Crop Image)", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                },
-                text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("اختر نسبة القص المطلوبة:", color = TextSub, fontSize = 12.sp)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        val presets = listOf("1:1" to "1:1 مربع", "4:3" to "4:3 نسبة", "16:9" to "16:9 عريض", "freeform" to "قص حر (80%)")
-                        presets.forEach { (ratioKey, ratioLabel) ->
-                            Button(
-                                onClick = {
-                                    showCropDialog = false
-                                    val curr = processedBitmap ?: return@Button
-                                    isProcessing = true
-                                    coroutineScope.launch {
-                                        val cropped = withContext(Dispatchers.Default) {
-                                            ImageProcessor.cropBitmap(curr, ratioKey)
-                                        }
-                                        if (initialOriginalBitmap != null) {
-                                            val croppedInit = withContext(Dispatchers.Default) {
-                                                ImageProcessor.cropBitmap(initialOriginalBitmap!!, ratioKey)
-                                            }
-                                            initialOriginalBitmap = croppedInit
-                                        }
-                                        undoStack.add(curr)
-                                        redoStack.clear()
-                                        originalBitmap = cropped
-                                        processedBitmap = cropped
-                                        strokeList.clear()
-                                        redrawSignal++
-                                        isProcessing = false
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B))
-                            ) {
-                                Text(ratioLabel, color = Color.White, fontSize = 12.sp)
-                            }
-                        }
-                    }
-                },
-                confirmButton = {},
-                dismissButton = {
-                    TextButton(onClick = { showCropDialog = false }) {
-                        Text("إلغاء", color = TextSub)
-                    }
-                }
-            )
-        }
 
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -552,7 +452,7 @@ fun ObjectRemoverScreen(
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, BorderColor)
             ) {
-                Text("↩️ تراجع", color = if (undoStack.isNotEmpty()) TextMain else TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_undo", currentLang), color = if (undoStack.isNotEmpty()) TextMain else TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
 
             Button(
@@ -572,7 +472,7 @@ fun ObjectRemoverScreen(
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, BorderColor)
             ) {
-                Text("↪️ إعادة", color = if (redoStack.isNotEmpty()) TextMain else TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(com.novacore.piximaxaiultra.utils.LanguageManager.getString("btn_redo", currentLang), color = if (redoStack.isNotEmpty()) TextMain else TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -609,7 +509,7 @@ fun ObjectRemoverScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "صوت الفرشاة 🔊", color = TextSub, fontSize = 11.sp)
+                Text(text = com.novacore.piximaxaiultra.utils.LanguageManager.getString("brush_audio", currentLang), color = TextSub, fontSize = 11.sp)
                 Switch(
                     checked = isAudioFeedbackEnabled,
                     onCheckedChange = { isAudioFeedbackEnabled = it },

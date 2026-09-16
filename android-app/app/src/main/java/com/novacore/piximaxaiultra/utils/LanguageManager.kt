@@ -89,6 +89,13 @@ object LanguageManager {
             "es" to "🎯 Eliminar Objetos",
             "de" to "🎯 Objekte Entfernen"
         ),
+        "tab_crop_rotate" to mapOf(
+            "ar" to "📐 قص وتدوير",
+            "en" to "📐 Crop & Rotate",
+            "fr" to "📐 Rogner & Tourner",
+            "es" to "📐 Recortar y Rotar",
+            "de" to "📐 Zuschneiden & Drehen"
+        ),
         "tab_bg_removal" to mapOf(
             "ar" to "✂️ إزالة الخلفية",
             "en" to "✂️ BG Removal",
@@ -294,6 +301,21 @@ object LanguageManager {
         "ratio_1_1" to mapOf("ar" to "1:1 مربع", "en" to "1:1 Square", "fr" to "1:1 Carré", "es" to "1:1 Cuadrado", "de" to "1:1 Quadrat"),
         "ratio_9_16" to mapOf("ar" to "9:16 طولي", "en" to "9:16 Portrait", "fr" to "9:16 Portrait", "es" to "9:16 Retrato", "de" to "9:16 Hochformat"),
         "ratio_16_9" to mapOf("ar" to "16:9 عرضي", "en" to "16:9 Landscape", "fr" to "16:9 Paysage", "es" to "16:9 Paisaje", "de" to "16:9 Querformat"),
+        "crop_freeform" to mapOf("ar" to "قص حر (80%)", "en" to "Free Crop (80%)", "fr" to "Rognage libre (80%)", "es" to "Recorte libre (80%)", "de" to "Freies Zuschneiden (80%)"),
+        "btn_rotate_90" to mapOf("ar" to "↻ تدوير 90°", "en" to "↻ Rotate 90°", "fr" to "↻ Tourner 90°", "es" to "↻ Rotar 90°", "de" to "↻ Drehen 90°"),
+        "btn_crop_image" to mapOf("ar" to "✂️ قص الصورة", "en" to "✂️ Crop Image", "fr" to "✂️ Rogner", "es" to "✂️ Recortar", "de" to "✂️ Zuschneiden"),
+        "btn_flip_horizontal" to mapOf("ar" to "↔ انعكاس أفقي", "en" to "↔ Flip Horizontal", "fr" to "↔ Retournement", "es" to "↔ Voltear", "de" to "↔ Spiegeln"),
+        "rotate_upload_prompt" to mapOf("ar" to "🔄 اختر صورة لتدويرها أو قصها", "en" to "🔄 Select an image to crop or rotate", "fr" to "🔄 Sélectionnez une image à rogner ou tourner", "es" to "🔄 Seleccione una imagen para recortar o rotar", "de" to "🔄 Wählen Sie ein Bild zum Zuschneiden oder Drehen"),
+        "rotate_preview" to mapOf("ar" to "معاينة التدوير والقص", "en" to "Crop & Rotate Preview", "fr" to "Aperçu rognage & rotation", "es" to "Vista previa recorte y rotación", "de" to "Vorschau Zuschneiden & Drehen"),
+        "btn_undo" to mapOf("ar" to "↩️ تراجع", "en" to "↩️ Undo", "fr" to "↩️ Annuler", "es" to "↩️ Deshacer", "de" to "↩️ Rückgängig"),
+        "btn_redo" to mapOf("ar" to "↪️ إعادة", "en" to "↪️ Redo", "fr" to "↪️ Rétablir", "es" to "↪️ Rehacer", "de" to "↪️ Wiederholen"),
+        "brush_audio" to mapOf("ar" to "صوت الفرشاة 🔊", "en" to "Brush Audio 🔊", "fr" to "Son du pinceau 🔊", "es" to "Sonido de pincel 🔊", "de" to "Pinselsound 🔊"),
+        "before_label" to mapOf("ar" to "قبل (Before)", "en" to "Before", "fr" to "Avant", "es" to "Antes", "de" to "Vorher"),
+        "after_label" to mapOf("ar" to "بعد (After)", "en" to "After", "fr" to "Après", "es" to "Después", "de" to "Nachher"),
+        "mode_brush" to mapOf("ar" to "وضع الفرشاة 🖌️", "en" to "Brush Mode 🖌️", "fr" to "Mode Pinceau 🖌️", "es" to "Modo Pincel 🖌️", "de" to "Pinselmodus 🖌️"),
+        "mode_compare" to mapOf("ar" to "مقارنة قبل / بعد ↔", "en" to "Before / After Compare ↔", "fr" to "Comparer Avant / Après ↔", "es" to "Comparar Antes / Después ↔", "de" to "Vorher / Nachher Vergleich ↔"),
+        "crop_dialog_title" to mapOf("ar" to "قص الصورة (Crop Image)", "en" to "Crop Image", "fr" to "Rogner l'image", "es" to "Recortar imagen", "de" to "Bild zuschneiden"),
+        "crop_dialog_desc" to mapOf("ar" to "اختر نسبة القص المطلوبة:", "en" to "Select target crop aspect ratio:", "fr" to "Sélectionnez le ratio de rognage:", "es" to "Seleccione la proporción de recorte:", "de" to "Wählen Sie das Seitenverhältnis:"),
         "sharpness_balanced" to mapOf(
             "ar" to "الحدة (Sharpness) - متوازن",
             "en" to "Sharpness - Balanced",
