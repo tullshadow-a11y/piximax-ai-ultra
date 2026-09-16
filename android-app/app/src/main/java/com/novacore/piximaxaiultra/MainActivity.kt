@@ -606,7 +606,7 @@ fun ProAuthDialog(
             Button(
                 onClick = {
                     val key = keyText.trim()
-                    val user = FirebaseAuth.getInstance().currentUser
+                    val user = try { FirebaseAuth.getInstance().currentUser } catch (e: Exception) { null }
                     val prefs = context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
 
                     fun handleInvalidKey() {
@@ -618,27 +618,37 @@ fun ProAuthDialog(
                         ).show()
                     }
 
-                    if (key.isNotEmpty() && user != null) {
-                        FirebaseFirestore.getInstance().collection("whop_keys").document(key).get()
-                            .addOnSuccessListener { doc ->
-                                if (doc != null && doc.exists() && (doc.getBoolean("active") == true || doc.getBoolean("valid") == true)) {
-                                    val userMap = mapOf("email" to (user.email ?: ""), "isPro" to true)
-                                    FirebaseFirestore.getInstance().collection("users").document(user.uid).set(userMap)
-                                        .addOnSuccessListener {
-                                            prefs.edit().putBoolean("piximax_pro_auth", true).apply()
-                                            onAuthenticated()
-                                        }
-                                        .addOnFailureListener {
+                    try {
+                        if (key.isNotEmpty() && user != null) {
+                            FirebaseFirestore.getInstance().collection("whop_keys").document(key).get()
+                                .addOnSuccessListener { doc ->
+                                    try {
+                                        if (doc != null && doc.exists() && (doc.getBoolean("active") == true || doc.getBoolean("valid") == true)) {
+                                            val userMap = mapOf("email" to (user.email ?: ""), "isPro" to true)
+                                            FirebaseFirestore.getInstance().collection("users").document(user.uid).set(userMap)
+                                                .addOnSuccessListener {
+                                                    prefs.edit().putBoolean("piximax_pro_auth", true).apply()
+                                                    onAuthenticated()
+                                                }
+                                                .addOnFailureListener {
+                                                    handleInvalidKey()
+                                                }
+                                        } else {
                                             handleInvalidKey()
                                         }
-                                } else {
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        handleInvalidKey()
+                                    }
+                                }
+                                .addOnFailureListener {
                                     handleInvalidKey()
                                 }
-                            }
-                            .addOnFailureListener {
-                                handleInvalidKey()
-                            }
-                    } else {
+                        } else {
+                            handleInvalidKey()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                         handleInvalidKey()
                     }
                 },
