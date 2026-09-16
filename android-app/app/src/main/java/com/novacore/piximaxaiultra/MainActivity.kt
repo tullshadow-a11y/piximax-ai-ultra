@@ -68,20 +68,49 @@ class MainActivity : ComponentActivity() {
                 var selectedTab by remember {
                     mutableStateOf(sharedPreferences.getInt("active_tab", 0))
                 }
-                var isProUser by remember {
-                    mutableStateOf(sharedPreferences.getBoolean("piximax_pro_auth", false))
-                }
+                var isProUser by remember { mutableStateOf(false) }
                 var showAuthDialog by remember { mutableStateOf(false) }
+                var currentDraftUri by remember { mutableStateOf<Uri?>(null) }
 
                 LaunchedEffect(Unit) {
-                    firebaseAuth?.currentUser?.let { user ->
-                        firebaseFirestore?.collection("users")?.document(user.uid)?.get()
-                            ?.addOnSuccessListener { doc ->
-                                if (doc != null && doc.getBoolean("isPro") == true) {
-                                    isProUser = true
-                                    sharedPreferences.edit().putBoolean("piximax_pro_auth", true).apply()
-                                }
+                    val draft = com.novacore.piximaxaiultra.utils.DraftManager.getDraft(this@MainActivity)
+                    if (draft != null) {
+                        selectedTab = draft.activeTab
+                        currentDraftUri = draft.imageUri
+                    }
+                }
+
+                val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                DisposableEffect(lifecycleOwner) {
+                    val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                        if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                            val currentUser = firebaseAuth?.currentUser
+                            if (currentUser != null) {
+                                firebaseFirestore?.collection("users")?.document(currentUser.uid)?.get()
+                                    ?.addOnSuccessListener { doc ->
+                                        if (doc != null && doc.getBoolean("isPro") == true) {
+                                            isProUser = true
+                                            sharedPreferences.edit().putBoolean("piximax_pro_auth", true).apply()
+                                        } else {
+                                            isProUser = false
+                                            sharedPreferences.edit().putBoolean("piximax_pro_auth", false).apply()
+                                        }
+                                    }
+                                    ?.addOnFailureListener {
+                                        isProUser = false
+                                        sharedPreferences.edit().putBoolean("piximax_pro_auth", false).apply()
+                                    }
+                            } else {
+                                isProUser = false
+                                sharedPreferences.edit().putBoolean("piximax_pro_auth", false).apply()
                             }
+                        } else if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                            com.novacore.piximaxaiultra.utils.DraftManager.saveDraft(this@MainActivity, currentDraftUri, selectedTab)
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose {
+                        lifecycleOwner.lifecycle.removeObserver(observer)
                     }
                 }
 
@@ -115,7 +144,15 @@ class MainActivity : ComponentActivity() {
 
                         Box(modifier = Modifier.weight(1f)) {
                             when (selectedTab) {
-                                0 -> ObjectRemoverScreen(isProUser)
+                                0 -> ObjectRemoverScreen(
+                                    isProUser = isProUser,
+                                    initialUri = currentDraftUri,
+                                    onUriChanged = { uri -> currentDraftUri = uri },
+                                    onDraftCleared = {
+                                        currentDraftUri = null
+                                        com.novacore.piximaxaiultra.utils.DraftManager.clearDraft(this@MainActivity)
+                                    }
+                                )
                                 1 -> BgRemovalScreen(isProUser)
                                 2 -> FaceRetouchScreen(isProUser)
                                 3 -> WatermarkScreen(isProUser)
@@ -476,22 +513,32 @@ fun ProAuthDialog(
                                             val uid = authResult.user?.uid ?: ""
                                             FirebaseFirestore.getInstance().collection("users").document(uid).get()
                                                 .addOnSuccessListener { doc ->
-                                                    if (doc.getBoolean("isPro") == true) {
+                                                    if (doc != null && doc.getBoolean("isPro") == true) {
                                                         onAuthenticated()
                                                     } else {
-                                                        android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                                        context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                                            .edit().putBoolean("piximax_pro_auth", false).apply()
                                                         onDismiss()
                                                     }
                                                 }
+                                                .addOnFailureListener {
+                                                    context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                                        .edit().putBoolean("piximax_pro_auth", false).apply()
+                                                    onDismiss()
+                                                }
                                         }
-                                        .addOnFailureListener {
-                                            android.widget.Toast.makeText(context, "Login failed: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                        .addOnFailureListener { err ->
+                                            context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                                .edit().putBoolean("piximax_pro_auth", false).apply()
+                                            android.widget.Toast.makeText(context, err.localizedMessage ?: "Login failed", android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                 } catch (e: Exception) {
-                                    android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
-                                    onDismiss()
+                                    context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                        .edit().putBoolean("piximax_pro_auth", false).apply()
                                 }
                             } else {
+                                context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                    .edit().putBoolean("piximax_pro_auth", false).apply()
                                 android.widget.Toast.makeText(context, "Invalid email / password", android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
@@ -510,17 +557,22 @@ fun ProAuthDialog(
                                             val uid = authResult.user?.uid ?: ""
                                             val userMap = mapOf("email" to emailText.trim(), "isPro" to false)
                                             FirebaseFirestore.getInstance().collection("users").document(uid).set(userMap)
-                                            android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
+                                            context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                                .edit().putBoolean("piximax_pro_auth", false).apply()
                                             onDismiss()
                                         }
-                                        .addOnFailureListener {
-                                            android.widget.Toast.makeText(context, "Failed: ${it.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                        .addOnFailureListener { err ->
+                                            context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                                .edit().putBoolean("piximax_pro_auth", false).apply()
+                                            android.widget.Toast.makeText(context, err.localizedMessage ?: "Registration failed", android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                 } catch (e: Exception) {
-                                    android.widget.Toast.makeText(context, "Success! ✨", android.widget.Toast.LENGTH_SHORT).show()
-                                    onDismiss()
+                                    context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                        .edit().putBoolean("piximax_pro_auth", false).apply()
                                 }
                             } else {
+                                context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+                                    .edit().putBoolean("piximax_pro_auth", false).apply()
                                 android.widget.Toast.makeText(context, "Invalid email / password", android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
@@ -553,19 +605,41 @@ fun ProAuthDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (keyText.trim().length >= 3) {
-                        try {
-                            val user = FirebaseAuth.getInstance().currentUser
-                            if (user != null) {
-                                val userMap = mapOf("email" to (user.email ?: ""), "isPro" to true)
-                                FirebaseFirestore.getInstance().collection("users").document(user.uid).set(userMap)
+                    val key = keyText.trim()
+                    val user = FirebaseAuth.getInstance().currentUser
+                    val prefs = context.getSharedPreferences("piximax_prefs", Context.MODE_PRIVATE)
+
+                    fun handleInvalidKey() {
+                        prefs.edit().putBoolean("piximax_pro_auth", false).apply()
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.error_invalid_whop_key),
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    if (key.isNotEmpty() && user != null) {
+                        FirebaseFirestore.getInstance().collection("whop_keys").document(key).get()
+                            .addOnSuccessListener { doc ->
+                                if (doc != null && doc.exists() && (doc.getBoolean("active") == true || doc.getBoolean("valid") == true)) {
+                                    val userMap = mapOf("email" to (user.email ?: ""), "isPro" to true)
+                                    FirebaseFirestore.getInstance().collection("users").document(user.uid).set(userMap)
+                                        .addOnSuccessListener {
+                                            prefs.edit().putBoolean("piximax_pro_auth", true).apply()
+                                            onAuthenticated()
+                                        }
+                                        .addOnFailureListener {
+                                            handleInvalidKey()
+                                        }
+                                } else {
+                                    handleInvalidKey()
+                                }
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                        onAuthenticated()
+                            .addOnFailureListener {
+                                handleInvalidKey()
+                            }
                     } else {
-                        android.widget.Toast.makeText(context, "Enter valid Whop Pro key", android.widget.Toast.LENGTH_SHORT).show()
+                        handleInvalidKey()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9900))
